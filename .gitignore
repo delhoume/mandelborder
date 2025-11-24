@@ -1,0 +1,17 @@
+# Binaries
+mandelbrot_sdl2
+*.o
+*.out
+*.exe
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Build artifacts
+*.dSYM/
