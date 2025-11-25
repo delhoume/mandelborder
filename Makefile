@@ -1,7 +1,7 @@
 # Makefile for Mandelbrot SDL2 renderer
 
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -O3
+CXXFLAGS = -std=c++14 -Wall -O3
 LDFLAGS = -lSDL2
 
 # macOS specific flags
@@ -17,15 +17,19 @@ ifeq ($(UNAME_S),Linux)
 endif
 
 TARGET = mandelbrot_sdl2
-SOURCE = mandelbrot_sdl2.cpp
+SOURCES = main.cpp mandelbrot_app.cpp mandelbrot_calculator.cpp
+OBJS = $(SOURCES:.cpp=.o)
 
 all: $(TARGET)
 
-$(TARGET): $(SOURCE)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCE) $(LDFLAGS)
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(OBJS)
 
 run: $(TARGET)
 	./$(TARGET)
