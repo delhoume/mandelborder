@@ -1,17 +1,13 @@
 # Makefile for Mandelbrot SDL2 renderer
 
-CXX = g++
-CXXFLAGS = -std=c++14 -Wall -O3
-LDFLAGS = -lSDL2
+MAKEFLAGS += -j 8
 
-# macOS specific flags
-UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Darwin)
-    CXXFLAGS += -I/opt/homebrew/include -I/usr/local/include
-    LDFLAGS += -L/opt/homebrew/lib -L/usr/local/lib
-endif
+CXX = g++
+CXXFLAGS = -std=c++14 -Wall -O3 $(shell sdl2-config --cflags)
+LDFLAGS = $(shell sdl2-config --libs)
 
 # Linux specific flags
+UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
     LDFLAGS += -lm
 endif
