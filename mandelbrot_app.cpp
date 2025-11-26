@@ -285,6 +285,7 @@ void MandelbrotApp::run()
     render();
 
     std::cout << "Press ESC to quit, SPACE to recompute, R to reset zoom, S to toggle speed mode, A for auto-zoom" << std::endl;
+    std::cout << "Press P to switch to a random palette" << std::endl;
     std::cout << "Click and drag to zoom into a region (SHIFT to zoom out, CTRL for center-based)" << std::endl;
 
     bool running = true;
@@ -348,6 +349,12 @@ void MandelbrotApp::run()
                     bool mode = !calculator->getSpeedMode();
                     calculator->setSpeedMode(mode);
                     std::cout << "Speed mode: " << (mode ? "ON" : "OFF") << std::endl;
+                }
+                else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_p)
+                {
+                    gradient = CosineGradient::createRandom();
+                    render();
+                    std::cout << "Switched to new random palette" << std::endl;
                 }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a)
                 {
