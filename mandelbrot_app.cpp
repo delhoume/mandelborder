@@ -315,6 +315,14 @@ void MandelbrotApp::run()
                                         { this->render(); });
                     render();
                 }
+                else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_h)
+                {
+                    resetZoom();
+                    calculator->reset();
+                    calculator->compute([this]()
+                                        { this->render(); });
+                    render();
+                }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_s)
                 {
                     bool mode = !calculator->getSpeedMode();
