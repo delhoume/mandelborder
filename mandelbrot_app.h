@@ -39,4 +39,5 @@ private:
                            int steps = 15, int frameDelay = 16);
     void blinkRect(int x, int y, int w, int h, int times = 3, int blinkDelay = 150);
     void resetZoom();
+    bool findInterestingPoint(int &outX, int &outY);
 };

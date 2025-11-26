@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <cmath>
 #include <algorithm>
+#include <cstdlib>
+#include <ctime>
 
 MandelbrotApp::MandelbrotApp(int w, int h)
     : width(w), height(h), window(nullptr), renderer(nullptr), texture(nullptr), autoZoomActive(false)
@@ -10,6 +12,7 @@ MandelbrotApp::MandelbrotApp(int w, int h)
     calculator = std::make_unique<MandelbrotCalculator>(width, height);
     initSDL();
     generatePalette();
+    srand(static_cast<unsigned>(time(nullptr)));
 }
 
 MandelbrotApp::~MandelbrotApp()
@@ -253,6 +256,71 @@ void MandelbrotApp::blinkRect(int x, int y, int w, int h, int times, int blinkDe
     }
 }
 
+bool MandelbrotApp::findInterestingPoint(int &outX, int &outY)
+{
+    const auto &data = calculator->getData();
+
+    // First pass: find the maximum non-MAX_ITER value in the entire view
+    int maxIterFound = 0;
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            int p = y * width + x;
+            int iter = data[p];
+
+            if (iter < MandelbrotCalculator::MAX_ITER && iter > maxIterFound)
+            {
+                maxIterFound = iter;
+            }
+        }
+    }
+
+    // If we found no valid iterations, fall back to center
+    if (maxIterFound == 0)
+    {
+        outX = width / 2;
+        outY = height / 2;
+        return false;
+    }
+
+    // Define "interesting" as being in the top 10% of actual iteration values
+    // This adapts to the current view
+    // int threshold = maxIterFound * 9 / 10;
+    int threshold = maxIterFound - 5;
+
+    // Second pass: collect candidates with high iteration counts
+    std::vector<std::pair<int, int>> candidates;
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            int p = y * width + x;
+            int iter = data[p];
+
+            // Point is interesting if it has high iteration but not max
+            if (iter >= threshold && iter < MandelbrotCalculator::MAX_ITER)
+            {
+                candidates.push_back({x, y});
+            }
+        }
+    }
+
+    // If we found candidates, pick one randomly
+    if (!candidates.empty())
+    {
+        int idx = rand() % candidates.size();
+        outX = candidates[idx].first;
+        outY = candidates[idx].second;
+        return true;
+    }
+
+    // Fallback to center if no interesting point found
+    outX = width / 2;
+    outY = height / 2;
+    return false;
+}
+
 void MandelbrotApp::zoomToRect(int x1, int y1, int x2, int y2, bool inverse)
 {
     if (inverse)
@@ -457,20 +525,22 @@ void MandelbrotApp::run()
         // Auto-zoom functionality
         if (autoZoomActive)
         {
-            // Calculate rectangle: w/4 by h/4 centered on screen
-            int centerX = width / 2;
-            int centerY = height / 2;
+            // Find an interesting point to zoom to
+            int centerX, centerY;
+            findInterestingPoint(centerX, centerY);
+
+            // Calculate rectangle: w/4 by h/4 centered on interesting point
             int rectW = width / 4;
             int rectH = height / 4;
-            
+
             int x1 = centerX - rectW / 2;
             int y1 = centerY - rectH / 2;
             int x2 = x1 + rectW;
             int y2 = y1 + rectH;
-            
+
             // Blink the rectangle 3 times before zooming
             blinkRect(x1, y1, rectW, rectH, 3, 150);
-            
+
             // Perform the zoom
             zoomToRect(x1, y1, x2, y2, false);
         }
