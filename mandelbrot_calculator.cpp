@@ -139,13 +139,26 @@ void MandelbrotCalculator::compute(std::function<void()> progressCallback)
         addQueue((height - 1) * width + x);
     }
 
-    // Process the queue (LIFO / Stack behavior)
+    // Process the queue (mixed FIFO/LIFO for better visual effect)
     unsigned processed = 0;
+    unsigned flag = 0;
     while (queueTail != queueHead)
     {
-        if (queueHead == 0)
-            queueHead = queue.size();
-        unsigned p = queue[--queueHead];
+        unsigned p;
+        if (queueHead <= queueTail || ++flag & 3)
+        {
+            // FIFO: dequeue from tail
+            p = queue[queueTail++];
+            if (queueTail == queue.size())
+                queueTail = 0;
+        }
+        else
+        {
+            // LIFO: dequeue from head
+            if (queueHead == 0)
+                queueHead = queue.size();
+            p = queue[--queueHead];
+        }
 
         scan(p);
 
