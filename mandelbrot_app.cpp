@@ -62,12 +62,26 @@ void MandelbrotApp::initSDL()
 
 void MandelbrotApp::generatePalette()
 {
-    palette.resize(256);
-    for (int c = 0; c < 256; ++c)
+    int max_iter = MandelbrotCalculator::MAX_ITER;
+    palette.resize(max_iter);
+    double freq = 2.0 * M_PI / max_iter;
+    const int amplitude = 110;
+    const int base0 = amplitude;
+    const int base1 = 255 - amplitude - 1;
+    for (int c = 0; c < max_iter; ++c)
     {
-        palette[c].r = static_cast<Uint8>(128 - 127 * std::cos(c * 0.01227 * 1));
-        palette[c].g = static_cast<Uint8>(128 - 127 * std::cos(c * 0.01227 * 3));
-        palette[c].b = static_cast<Uint8>(128 - 127 * std::cos(c * 0.01227 * 5));
+        if (c % 2 == 0)
+        {
+            palette[c].r = static_cast<Uint8>(base0 - amplitude * std::cos(c * freq * 1));
+            palette[c].g = static_cast<Uint8>(base0 - amplitude * std::cos(c * freq * 3));
+            palette[c].b = static_cast<Uint8>(base0 - amplitude * std::cos(c * freq * 5));
+        }
+        else
+        {
+            palette[c].r = static_cast<Uint8>(base1 - amplitude * std::cos(c * freq * 1));
+            palette[c].g = static_cast<Uint8>(base1 - amplitude * std::cos(c * freq * 3));
+            palette[c].b = static_cast<Uint8>(base1 - amplitude * std::cos(c * freq * 5));
+        }
         palette[c].a = 255;
     }
 }
@@ -86,9 +100,17 @@ void MandelbrotApp::render()
         for (int x = 0; x < width; ++x)
         {
             int p = y * width + x;
-            int iter = data[p] % 256;
-            SDL_Color color = palette[iter];
-            pixels[y * (pitch / 4) + x] = (color.r << 16) | (color.g << 8) | color.b;
+            int iter = data[p];
+
+            if (iter == MandelbrotCalculator::MAX_ITER)
+            {
+                pixels[y * (pitch / 4) + x] = 0; // Black
+            }
+            else
+            {
+                SDL_Color color = palette[iter];
+                pixels[y * (pitch / 4) + x] = (color.r << 16) | (color.g << 8) | color.b;
+            }
         }
     }
 

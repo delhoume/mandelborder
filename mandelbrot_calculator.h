@@ -28,10 +28,11 @@ public:
     void setSpeedMode(bool mode) { speedMode = mode; }
     bool getSpeedMode() const { return speedMode; }
 
+    static constexpr int MAX_ITER = 768;
+
 private:
     int width;
     int height;
-    static constexpr int MAX_ITER = 768;
 
     double cre, cim, diam;
     double minr, mini, maxr, maxi;
