@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include "mandelbrot_calculator.h"
+#include "zoom_point_chooser.h"
 
 class MandelbrotApp
 {
@@ -22,6 +23,7 @@ private:
     SDL_Texture *texture;
 
     std::unique_ptr<MandelbrotCalculator> calculator;
+    std::unique_ptr<ZoomPointChooser> zoomChooser;
     std::vector<SDL_Color> palette;
 
     bool autoZoomActive;
@@ -39,5 +41,4 @@ private:
                            int steps = 15, int frameDelay = 16);
     void blinkRect(int x, int y, int w, int h, int times = 3, int blinkDelay = 150);
     void resetZoom();
-    bool findInterestingPoint(int &outX, int &outY);
 };
