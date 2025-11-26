@@ -2,6 +2,7 @@
 #define GRADIENT_H
 
 #include <SDL2/SDL.h>
+#include <memory>
 
 /**
  * Abstract base class for gradients.
@@ -34,6 +35,8 @@ public:
     CosineGradient(int base, int amplitude, double freqR, double freqG, double freqB);
 
     SDL_Color getColor(double t) const override;
+
+    static std::unique_ptr<CosineGradient> createRandom();
 };
 
 #endif // GRADIENT_H

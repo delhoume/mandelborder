@@ -13,12 +13,13 @@ MandelbrotApp::MandelbrotApp(int w, int h)
     calculator = std::make_unique<MandelbrotCalculator>(width, height);
     zoomChooser = std::make_unique<ZoomPointChooser>(width, height);
     
-    // Initialize gradient
-    // Base parameters: base=110, amplitude=110
-    gradient = std::make_unique<CosineGradient>(110, 110, 1.0, 3.0, 5.0);
+    // Initialize random seed first
+    srand(static_cast<unsigned>(time(nullptr)));
+
+    // Initialize gradient with random parameters
+    gradient = CosineGradient::createRandom();
 
     initSDL();
-    srand(static_cast<unsigned>(time(nullptr)));
 }
 
 MandelbrotApp::~MandelbrotApp()

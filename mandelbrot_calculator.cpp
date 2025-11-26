@@ -8,7 +8,7 @@
 MandelbrotCalculator::MandelbrotCalculator(int w, int h)
     : width(w), height(h), queueHead(0), queueTail(0), speedMode(false)
 {
-    data.resize(width * height, 0);
+    data.resize(width * height, MAX_ITER);
     done.resize(width * height, 0);
     // Resize to max possible pixels + 1 to prevent ring buffer overflow
     queue.resize(width * height + 1);
@@ -32,7 +32,7 @@ void MandelbrotCalculator::updateBounds(double new_cre, double new_cim, double n
 
 void MandelbrotCalculator::reset()
 {
-    std::fill(data.begin(), data.end(), 0);
+    std::fill(data.begin(), data.end(), MAX_ITER);
     std::fill(done.begin(), done.end(), 0);
     queueHead = queueTail = 0;
 }

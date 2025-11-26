@@ -3,7 +3,7 @@
 MAKEFLAGS += -j 8
 
 CXX = g++
-CXXFLAGS = -std=c++14 -Wall -O3 $(shell sdl2-config --cflags)
+CXXFLAGS = -std=c++23 -Wall -O3 $(shell sdl2-config --cflags)
 LDFLAGS = $(shell sdl2-config --libs)
 
 # Linux specific flags
