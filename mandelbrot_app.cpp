@@ -228,6 +228,31 @@ void MandelbrotApp::animateRectToRect(int startX, int startY, int startWidth, in
     }
 }
 
+void MandelbrotApp::blinkRect(int x, int y, int w, int h, int times, int blinkDelay)
+{
+    // Skip blinking in speed mode
+    if (calculator->getSpeedMode())
+        return;
+
+    for (int i = 0; i < times; ++i)
+    {
+        // Draw with rectangle
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_Rect rect = {x, y, w, h};
+        SDL_RenderDrawRect(renderer, &rect);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(blinkDelay);
+
+        // Draw without rectangle
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(blinkDelay);
+    }
+}
+
 void MandelbrotApp::zoomToRect(int x1, int y1, int x2, int y2, bool inverse)
 {
     if (inverse)
@@ -432,16 +457,19 @@ void MandelbrotApp::run()
         // Auto-zoom functionality
         if (autoZoomActive)
         {
-            // Calculate rectangle: h/2 by w/2 centered on screen
+            // Calculate rectangle: w/4 by h/4 centered on screen
             int centerX = width / 2;
             int centerY = height / 2;
-            int rectW = width / 2;
-            int rectH = height / 2;
+            int rectW = width / 4;
+            int rectH = height / 4;
             
             int x1 = centerX - rectW / 2;
             int y1 = centerY - rectH / 2;
             int x2 = x1 + rectW;
             int y2 = y1 + rectH;
+            
+            // Blink the rectangle 3 times before zooming
+            blinkRect(x1, y1, rectW, rectH, 3, 150);
             
             // Perform the zoom
             zoomToRect(x1, y1, x2, y2, false);

@@ -37,5 +37,6 @@ private:
     void animateRectToRect(int startX, int startY, int startWidth, int startHeight,
                            int endX, int endY, int endWidth, int endHeight,
                            int steps = 15, int frameDelay = 16);
+    void blinkRect(int x, int y, int w, int h, int times = 3, int blinkDelay = 150);
     void resetZoom();
 };
