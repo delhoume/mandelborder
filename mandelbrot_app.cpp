@@ -1,5 +1,6 @@
 #include "mandelbrot_app.h"
 #include <iostream>
+#include <iomanip>
 #include <stdexcept>
 #include <cmath>
 #include <algorithm>
@@ -11,8 +12,8 @@ MandelbrotApp::MandelbrotApp(int w, int h)
 {
     calculator = std::make_unique<MandelbrotCalculator>(width, height);
     zoomChooser = std::make_unique<ZoomPointChooser>(width, height);
+    colorPalette = std::make_unique<CosineWavePalette>(MandelbrotCalculator::MAX_ITER);
     initSDL();
-    generatePalette();
     srand(static_cast<unsigned>(time(nullptr)));
 }
 
@@ -64,32 +65,6 @@ void MandelbrotApp::initSDL()
     }
 }
 
-void MandelbrotApp::generatePalette()
-{
-    int max_iter = MandelbrotCalculator::MAX_ITER;
-    palette.resize(max_iter);
-    double freq = 2.0 * M_PI / max_iter;
-    const int amplitude = 110;
-    const int base0 = amplitude;
-    const int base1 = 255 - amplitude - 1;
-    for (int c = 0; c < max_iter; ++c)
-    {
-        if (c % 2 == 0)
-        {
-            palette[c].r = static_cast<Uint8>(base0 - amplitude * std::cos(c * freq * 1));
-            palette[c].g = static_cast<Uint8>(base0 - amplitude * std::cos(c * freq * 3));
-            palette[c].b = static_cast<Uint8>(base0 - amplitude * std::cos(c * freq * 5));
-        }
-        else
-        {
-            palette[c].r = static_cast<Uint8>(base1 - amplitude * std::cos(c * freq * 1));
-            palette[c].g = static_cast<Uint8>(base1 - amplitude * std::cos(c * freq * 3));
-            palette[c].b = static_cast<Uint8>(base1 - amplitude * std::cos(c * freq * 5));
-        }
-        palette[c].a = 255;
-    }
-}
-
 void MandelbrotApp::render()
 {
     Uint32 *pixels;
@@ -112,7 +87,7 @@ void MandelbrotApp::render()
             }
             else
             {
-                SDL_Color color = palette[iter];
+                SDL_Color color = colorPalette->getColor(iter);
                 pixels[y * (pitch / 4) + x] = (color.r << 16) | (color.g << 8) | color.b;
             }
         }
@@ -197,8 +172,9 @@ void MandelbrotApp::zoomToRegion(int x1, int y1, int x2, int y2)
 
     calculator->updateBounds(new_cre, new_cim, new_diam);
 
-    std::cout << "Zoomed to: center=(" << calculator->getCre() << ", " << calculator->getCim()
-              << "), diameter=" << calculator->getDiam() << std::endl;
+    std::cout << "Zoomed to: center=(" << std::scientific << std::setprecision(10)
+              << calculator->getCre() << ", " << calculator->getCim()
+              << "), diameter=" << calculator->getDiam() << std::defaultfloat << std::endl;
 }
 
 void MandelbrotApp::animateRectToRect(int startX, int startY, int startWidth, int startHeight,
@@ -467,10 +443,10 @@ void MandelbrotApp::run()
 
             // Find an interesting point to zoom to
             int centerX, centerY;
-            zoomChooser->findInterestingPoint(calculator->getData(), 
-                                             MandelbrotCalculator::MAX_ITER,
-                                             centerX, centerY, 
-                                             rectW, rectH);
+            zoomChooser->findInterestingPoint(calculator->getData(),
+                                              MandelbrotCalculator::MAX_ITER,
+                                              centerX, centerY,
+                                              rectW, rectH);
 
             int x1 = centerX - rectW / 2;
             int y1 = centerY - rectH / 2;

@@ -57,8 +57,8 @@ int ZoomPointChooser::calculateDiversityScore(const std::vector<int> &data, int 
 }
 
 bool ZoomPointChooser::findInterestingPoint(const std::vector<int> &data, int maxIter,
-                                           int &outX, int &outY,
-                                           int zoomRectWidth, int zoomRectHeight)
+                                            int &outX, int &outY,
+                                            int zoomRectWidth, int zoomRectHeight)
 {
     // First pass: find the maximum non-MAX_ITER value in the entire view
     int maxIterFound = 0;
@@ -106,9 +106,9 @@ bool ZoomPointChooser::findInterestingPoint(const std::vector<int> &data, int ma
             if (iter >= threshold && iter < maxIter)
             {
                 // Calculate diversity score for this potential zoom point
-                int score = calculateDiversityScore(data, maxIter, x, y, 
-                                                   zoomRectWidth, zoomRectHeight);
-                
+                int score = calculateDiversityScore(data, maxIter, x, y,
+                                                    zoomRectWidth, zoomRectHeight);
+
                 // Only consider points with meaningful diversity
                 if (score > 0)
                 {
@@ -123,12 +123,13 @@ bool ZoomPointChooser::findInterestingPoint(const std::vector<int> &data, int ma
     {
         // Sort by score (descending)
         std::sort(candidates.begin(), candidates.end(),
-                 [](const Candidate &a, const Candidate &b) { return a.score > b.score; });
+                  [](const Candidate &a, const Candidate &b)
+                  { return a.score > b.score; });
 
         // Pick randomly from top 20% of candidates (or at least top 1)
         int topCount = std::max(1, (int)(candidates.size() * 0.2));
         int idx = rand() % topCount;
-        
+
         outX = candidates[idx].x;
         outY = candidates[idx].y;
         return true;

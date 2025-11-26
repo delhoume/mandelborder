@@ -5,6 +5,7 @@
 #include <memory>
 #include "mandelbrot_calculator.h"
 #include "zoom_point_chooser.h"
+#include "color_palette.h"
 
 class MandelbrotApp
 {
@@ -24,12 +25,11 @@ private:
 
     std::unique_ptr<MandelbrotCalculator> calculator;
     std::unique_ptr<ZoomPointChooser> zoomChooser;
-    std::vector<SDL_Color> palette;
+    std::unique_ptr<ColorPalette> colorPalette;
 
     bool autoZoomActive;
 
     void initSDL();
-    void generatePalette();
     void render();
 
     // Interaction helpers
