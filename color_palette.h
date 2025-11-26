@@ -2,47 +2,38 @@
 #define COLOR_PALETTE_H
 
 #include <SDL2/SDL.h>
-#include <vector>
 
 /**
- * Abstract base class for color palettes used to visualize the Mandelbrot set.
- * Subclasses implement different color generation algorithms.
+ * Abstract base class for gradients.
+ * Returns a color for a value between 0.0 and 1.0.
  */
-class ColorPalette
+class Gradient
 {
 public:
-    virtual ~ColorPalette() = default;
+    virtual ~Gradient() = default;
 
     /**
-     * Get the color for a given iteration count.
-     * @param iteration The iteration count (0 to maxIterations-1)
+     * Get the color for a given position t.
+     * @param t Position in the gradient (0.0 to 1.0)
      * @return SDL_Color structure with RGBA values
      */
-    virtual SDL_Color getColor(int iteration) const = 0;
-
-    /**
-     * Get the maximum number of iterations this palette supports.
-     */
-    virtual int getMaxIterations() const = 0;
+    virtual SDL_Color getColor(double t) const = 0;
 };
 
 /**
- * A palette that uses cosine waves to generate smooth color transitions.
- * This encapsulates the original palette generation behavior.
+ * A gradient that uses cosine waves.
  */
-class CosineWavePalette : public ColorPalette
+class CosineGradient : public Gradient
 {
 private:
-    std::vector<SDL_Color> palette;
-    int maxIterations;
-
-    void generatePalette();
+    int base;
+    int amplitude;
+    double freqR, freqG, freqB;
 
 public:
-    explicit CosineWavePalette(int maxIter);
+    CosineGradient(int base, int amplitude, double freqR, double freqG, double freqB);
 
-    SDL_Color getColor(int iteration) const override;
-    int getMaxIterations() const override { return maxIterations; }
+    SDL_Color getColor(double t) const override;
 };
 
 #endif // COLOR_PALETTE_H

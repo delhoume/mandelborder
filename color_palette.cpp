@@ -1,45 +1,26 @@
 #include "color_palette.h"
 #include <cmath>
+#include <algorithm>
 
-CosineWavePalette::CosineWavePalette(int maxIter)
-    : maxIterations(maxIter)
+CosineGradient::CosineGradient(int base, int amplitude, double freqR, double freqG, double freqB)
+    : base(base), amplitude(amplitude), freqR(freqR), freqG(freqG), freqB(freqB)
 {
-    generatePalette();
 }
 
-void CosineWavePalette::generatePalette()
+SDL_Color CosineGradient::getColor(double t) const
 {
-    palette.resize(maxIterations);
-    double freq = 2.0 * M_PI / maxIterations;
-    const int amplitude = 110;
-    const int base0 = amplitude;
-    const int base1 = 255 - amplitude - 1;
+    // t is 0..1
+    // angle = t * 2 * PI
     
-    for (int c = 0; c < maxIterations; ++c)
-    {
-        if (c % 2 == 0)
-        {
-            palette[c].r = static_cast<Uint8>(base0 - amplitude * std::cos(c * freq * 1));
-            palette[c].g = static_cast<Uint8>(base0 - amplitude * std::cos(c * freq * 3));
-            palette[c].b = static_cast<Uint8>(base0 - amplitude * std::cos(c * freq * 5));
-        }
-        else
-        {
-            palette[c].r = static_cast<Uint8>(base1 - amplitude * std::cos(c * freq * 1));
-            palette[c].g = static_cast<Uint8>(base1 - amplitude * std::cos(c * freq * 3));
-            palette[c].b = static_cast<Uint8>(base1 - amplitude * std::cos(c * freq * 5));
-        }
-        palette[c].a = 255;
-    }
-}
+    double r = base - amplitude * std::cos(t * 2 * M_PI * freqR);
+    double g = base - amplitude * std::cos(t * 2 * M_PI * freqG);
+    double b = base - amplitude * std::cos(t * 2 * M_PI * freqB);
 
-SDL_Color CosineWavePalette::getColor(int iteration) const
-{
-    if (iteration >= 0 && iteration < maxIterations)
-    {
-        return palette[iteration];
-    }
-    
-    // Return black for out-of-range values
-    return {0, 0, 0, 255};
+    auto clamp = [](double val) -> Uint8 {
+        if (val < 0) return 0;
+        if (val > 255) return 255;
+        return static_cast<Uint8>(val);
+    };
+
+    return {clamp(r), clamp(g), clamp(b), 255};
 }

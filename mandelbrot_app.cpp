@@ -12,7 +12,14 @@ MandelbrotApp::MandelbrotApp(int w, int h)
 {
     calculator = std::make_unique<MandelbrotCalculator>(width, height);
     zoomChooser = std::make_unique<ZoomPointChooser>(width, height);
-    colorPalette = std::make_unique<CosineWavePalette>(MandelbrotCalculator::MAX_ITER);
+    
+    // Initialize gradients
+    // Even: base0 = 110, amplitude = 110
+    gradientEven = std::make_unique<CosineGradient>(110, 110, 1.0, 3.0, 5.0);
+    
+    // Odd: base1 = 255 - 110 - 1 = 144, amplitude = 110
+    gradientOdd = std::make_unique<CosineGradient>(144, 110, 1.0, 3.0, 5.0);
+
     initSDL();
     srand(static_cast<unsigned>(time(nullptr)));
 }
@@ -87,7 +94,16 @@ void MandelbrotApp::render()
             }
             else
             {
-                SDL_Color color = colorPalette->getColor(iter);
+                double t = static_cast<double>(iter) / MandelbrotCalculator::MAX_ITER;
+                SDL_Color color;
+                if (iter % 2 == 0)
+                {
+                    color = gradientEven->getColor(t);
+                }
+                else
+                {
+                    color = gradientOdd->getColor(t);
+                }
                 pixels[y * (pitch / 4) + x] = (color.r << 16) | (color.g << 8) | color.b;
             }
         }

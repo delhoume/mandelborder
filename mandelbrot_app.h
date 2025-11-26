@@ -25,7 +25,8 @@ private:
 
     std::unique_ptr<MandelbrotCalculator> calculator;
     std::unique_ptr<ZoomPointChooser> zoomChooser;
-    std::unique_ptr<ColorPalette> colorPalette;
+    std::unique_ptr<Gradient> gradientEven;
+    std::unique_ptr<Gradient> gradientOdd;
 
     bool autoZoomActive;
 
