@@ -5,7 +5,7 @@
 #include <algorithm>
 
 MandelbrotApp::MandelbrotApp(int w, int h)
-    : width(w), height(h), window(nullptr), renderer(nullptr), texture(nullptr)
+    : width(w), height(h), window(nullptr), renderer(nullptr), texture(nullptr), autoZoomActive(false)
 {
     calculator = std::make_unique<MandelbrotCalculator>(width, height);
     initSDL();
@@ -264,7 +264,7 @@ void MandelbrotApp::run()
                         { this->render(); });
     render();
 
-    std::cout << "Press ESC to quit, SPACE to recompute, R to reset zoom, S to toggle speed mode" << std::endl;
+    std::cout << "Press ESC to quit, SPACE to recompute, R to reset zoom, S to toggle speed mode, A for auto-zoom" << std::endl;
     std::cout << "Click and drag to zoom into a region (SHIFT to zoom out, CTRL for center-based)" << std::endl;
 
     bool running = true;
@@ -328,6 +328,11 @@ void MandelbrotApp::run()
                     bool mode = !calculator->getSpeedMode();
                     calculator->setSpeedMode(mode);
                     std::cout << "Speed mode: " << (mode ? "ON" : "OFF") << std::endl;
+                }
+                else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a)
+                {
+                    autoZoomActive = !autoZoomActive;
+                    std::cout << "Auto-zoom: " << (autoZoomActive ? "ON" : "OFF") << std::endl;
                 }
                 else if (dragging && (event.key.keysym.sym == SDLK_LCTRL ||
                                       event.key.keysym.sym == SDLK_RCTRL))
@@ -422,6 +427,24 @@ void MandelbrotApp::run()
                 }
                 break;
             }
+        }
+
+        // Auto-zoom functionality
+        if (autoZoomActive)
+        {
+            // Calculate rectangle: h/2 by w/2 centered on screen
+            int centerX = width / 2;
+            int centerY = height / 2;
+            int rectW = width / 2;
+            int rectH = height / 2;
+            
+            int x1 = centerX - rectW / 2;
+            int y1 = centerY - rectH / 2;
+            int x2 = x1 + rectW;
+            int y2 = y1 + rectH;
+            
+            // Perform the zoom
+            zoomToRect(x1, y1, x2, y2, false);
         }
 
         SDL_Delay(16); // ~60 FPS

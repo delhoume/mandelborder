@@ -24,6 +24,8 @@ private:
     std::unique_ptr<MandelbrotCalculator> calculator;
     std::vector<SDL_Color> palette;
 
+    bool autoZoomActive;
+
     void initSDL();
     void generatePalette();
     void render();
