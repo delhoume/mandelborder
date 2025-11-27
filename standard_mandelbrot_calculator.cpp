@@ -73,10 +73,7 @@ void StandardMandelbrotCalculator::compute(std::function<void()> progressCallbac
                   << " pixels (100.0%)"
                   << " in " << std::fixed << std::setprecision(1) << milliseconds << " ms";
         
-        if (speedMode)
-        {
-            std::cout << " (" << std::fixed << std::setprecision(0) << totalPixelsPerSec << " total px/s)";
-        }
+        std::cout << " (" << std::fixed << std::setprecision(0) << totalPixelsPerSec << " total px/s)";
         std::cout << std::endl;
     }
 }

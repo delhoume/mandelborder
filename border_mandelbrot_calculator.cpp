@@ -184,11 +184,8 @@ void BorderMandelbrotCalculator::compute(std::function<void()> progressCallback)
                   << " pixels (" << std::fixed << std::setprecision(1) << ratio << "%)"
                   << " in " << std::fixed << std::setprecision(1) << milliseconds << " ms";
         
-        if (speedMode)
-        {
-            std::cout << " (" << std::fixed << std::setprecision(0) << processedPixelsPerSec << " processed px/s"
-                      << ", " << std::fixed << std::setprecision(0) << totalPixelsPerSec << " total px/s)";
-        }
+        std::cout << " (" << std::fixed << std::setprecision(0) << processedPixelsPerSec << " processed px/s"
+                    << ", " << std::fixed << std::setprecision(0) << totalPixelsPerSec << " total px/s)";
         std::cout << std::endl;
     }
 }
