@@ -152,8 +152,17 @@ SDL_Rect MandelbrotApp::calculateSelectionRect(int startX, int startY, int endX,
     }
     else
     {
-        rectX = std::min(startX, endX);
-        rectY = std::min(startY, endY);
+        // Keep startX, startY as the anchor point
+        // Extend the rectangle in the direction of the drag
+        if (dx >= 0)
+            rectX = startX;  // Dragging right: anchor is left edge
+        else
+            rectX = startX - w;  // Dragging left: anchor is right edge
+        
+        if (dy >= 0)
+            rectY = startY;  // Dragging down: anchor is top edge
+        else
+            rectY = startY - h;  // Dragging up: anchor is bottom edge
     }
 
     return {rectX, rectY, w, h};
