@@ -15,12 +15,12 @@ MandelbrotApp::MandelbrotApp(int w, int h)
 
     calculator = std::make_unique<MandelbrotCalculator>(calcWidth, calcHeight);
     zoomChooser = std::make_unique<ZoomPointChooser>(calcWidth, calcHeight);
-    
+
     // Initialize random seed first
     srand(static_cast<unsigned>(time(nullptr)));
 
     // Initialize gradient with random parameters
-    gradient = CosineGradient::createRandom();
+    gradient = Gradient::createRandom();
 
     initSDL();
 }
@@ -99,7 +99,7 @@ void MandelbrotApp::render()
             {
                 double t = static_cast<double>(iter) / MandelbrotCalculator::MAX_ITER;
                 SDL_Color color = gradient->getColor(t);
-                
+
                 if (iter % 2 != 0)
                 {
                     // Shift value (brightness) for odd iterations
@@ -403,7 +403,7 @@ void MandelbrotApp::run()
                 }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_p)
                 {
-                    gradient = CosineGradient::createRandom();
+                    gradient = Gradient::createRandom();
                     render();
                     std::cout << "Switched to new random palette" << std::endl;
                 }
