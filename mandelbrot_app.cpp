@@ -7,13 +7,30 @@
 #include <cstdlib>
 #include <ctime>
 
-MandelbrotApp::MandelbrotApp(int w, int h)
-    : width(w), height(h), pixelSize(1), window(nullptr), renderer(nullptr), texture(nullptr), autoZoomActive(false)
+MandelbrotApp::MandelbrotApp(int w, int h, bool speed)
+    : width(w), height(h), pixelSize(1), window(nullptr), renderer(nullptr), texture(nullptr), 
+      autoZoomActive(false), speedMode(speed), verboseMode(false), exitAfterFirstDisplay(false)
 {
     calcWidth = width / pixelSize;
     calcHeight = height / pixelSize;
 
-    calculator = std::make_unique<MandelbrotCalculator>(calcWidth, calcHeight);
+    // Speed mode: 4x4 grid with parallel computation
+    // Normal mode: 1x1 grid (effectively single calculator) with progressive rendering
+    if (speedMode)
+    {
+        auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 4, 4);
+        gridCalc->setSpeedMode(true);
+        gridCalc->setVerboseMode(verboseMode);
+        calculator = std::move(gridCalc);
+    }
+    else
+    {
+        auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
+        gridCalc->setSpeedMode(false);
+        gridCalc->setVerboseMode(verboseMode);
+        calculator = std::move(gridCalc);
+    }
+
     zoomChooser = std::make_unique<ZoomPointChooser>(calcWidth, calcHeight);
 
     // Initialize random seed first
@@ -187,16 +204,27 @@ void MandelbrotApp::setPixelSize(int newSize)
     double currentCre = calculator->getCre();
     double currentCim = calculator->getCim();
     double currentDiam = calculator->getDiam();
-    bool currentSpeedMode = calculator->getSpeedMode();
 
     pixelSize = newSize;
     calcWidth = width / pixelSize;
     calcHeight = height / pixelSize;
 
-    // Recreate components
-    calculator = std::make_unique<MandelbrotCalculator>(calcWidth, calcHeight);
+    // Recreate calculator with appropriate grid size based on speed mode
+    if (speedMode)
+    {
+        auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 4, 4);
+        gridCalc->setSpeedMode(true);
+        gridCalc->setVerboseMode(verboseMode);
+        calculator = std::move(gridCalc);
+    }
+    else
+    {
+        auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
+        gridCalc->setSpeedMode(false);
+        gridCalc->setVerboseMode(verboseMode);
+        calculator = std::move(gridCalc);
+    }
     calculator->updateBounds(currentCre, currentCim, currentDiam);
-    calculator->setSpeedMode(currentSpeedMode);
 
     zoomChooser = std::make_unique<ZoomPointChooser>(calcWidth, calcHeight);
 
@@ -228,7 +256,6 @@ void MandelbrotApp::handleResize(int newWidth, int newHeight)
     double currentCre = calculator->getCre();
     double currentCim = calculator->getCim();
     double currentDiam = calculator->getDiam();
-    bool currentSpeedMode = calculator->getSpeedMode();
 
     // Update dimensions
     width = newWidth;
@@ -236,10 +263,20 @@ void MandelbrotApp::handleResize(int newWidth, int newHeight)
     calcWidth = width / pixelSize;
     calcHeight = height / pixelSize;
 
-    // Recreate calculator with new dimensions
-    calculator = std::make_unique<MandelbrotCalculator>(calcWidth, calcHeight);
+    // Recreate calculator with appropriate grid size based on speed mode
+    if (speedMode)
+    {
+        calculator = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 4, 4);
+        calculator->setSpeedMode(true);
+        calculator->setVerboseMode(verboseMode);
+    }
+    else
+    {
+        calculator = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
+        calculator->setSpeedMode(false);
+        calculator->setVerboseMode(verboseMode);
+    }
     calculator->updateBounds(currentCre, currentCim, currentDiam);
-    calculator->setSpeedMode(currentSpeedMode);
 
     // Recreate zoom chooser
     zoomChooser = std::make_unique<ZoomPointChooser>(calcWidth, calcHeight);
@@ -260,7 +297,7 @@ void MandelbrotApp::handleResize(int newWidth, int newHeight)
                         { this->render(); });
     render();
 
-    std::cout << "Window resized to: " << width << "x" << height 
+    std::cout << "Window resized to: " << width << "x" << height
               << " (calc: " << calcWidth << "x" << calcHeight << ")" << std::endl;
 }
 
@@ -293,9 +330,12 @@ void MandelbrotApp::zoomToRegion(int x1, int y1, int x2, int y2)
 
     calculator->updateBounds(new_cre, new_cim, new_diam);
 
-    std::cout << "Zoomed to: center=(" << std::scientific << std::setprecision(10)
-              << calculator->getCre() << ", " << calculator->getCim()
-              << "), diameter=" << calculator->getDiam() << std::defaultfloat << std::endl;
+    if (verboseMode)
+    {
+        std::cout << "Zoomed to: center=(" << std::scientific << std::setprecision(10)
+                  << calculator->getCre() << ", " << calculator->getCim()
+                  << "), diameter=" << calculator->getDiam() << std::defaultfloat << std::endl;
+    }
 }
 
 void MandelbrotApp::animateRectToRect(int startX, int startY, int startWidth, int startHeight,
@@ -401,8 +441,14 @@ void MandelbrotApp::run()
                         { this->render(); });
     render();
 
+    if (exitAfterFirstDisplay)
+    {
+        std::cout << "Exiting after first display as requested" << std::endl;
+        return;
+    }
+
     std::cout << "Press ESC to quit, SPACE to recompute, R to reset zoom, S to toggle speed mode, A for auto-zoom" << std::endl;
-    std::cout << "Press P to switch to a random palette" << std::endl;
+    std::cout << "Press P to switch to a random palette, V to toggle verbose mode" << std::endl;
     std::cout << "Click and drag to zoom into a region (SHIFT to zoom out, CTRL for center-based)" << std::endl;
 
     bool running = true;
@@ -470,15 +516,46 @@ void MandelbrotApp::run()
                 }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_s)
                 {
-                    bool mode = !calculator->getSpeedMode();
-                    calculator->setSpeedMode(mode);
-                    std::cout << "Speed mode: " << (mode ? "ON" : "OFF") << std::endl;
+                    // Toggle speed mode
+                    speedMode = !speedMode;
+                    
+                    // Save current view parameters
+                    double currentCre = calculator->getCre();
+                    double currentCim = calculator->getCim();
+                    double currentDiam = calculator->getDiam();
+                    
+                    // Recreate calculator with appropriate grid size
+                    if (speedMode)
+                    {
+                        calculator = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 4, 4);
+                        calculator->setSpeedMode(true);
+                        calculator->setVerboseMode(verboseMode);
+                        std::cout << "Speed mode: ON (parallel 4x4 grid)" << std::endl;
+                    }
+                    else
+                    {
+                        calculator = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
+                        calculator->setSpeedMode(false);
+                        calculator->setVerboseMode(verboseMode);
+                        std::cout << "Speed mode: OFF (progressive 1x1)" << std::endl;
+                    }
+                    calculator->updateBounds(currentCre, currentCim, currentDiam);
+                    
+                    // Recompute with new calculator
+                    calculator->compute([this]()
+                                        { this->render(); });
+                    render();
                 }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_p)
                 {
                     gradient = Gradient::createRandom();
                     render();
                     std::cout << "Switched to new random palette" << std::endl;
+                }
+                else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_v)
+                {
+                    verboseMode = !verboseMode;
+                    std::cout << "Verbose mode: " << (verboseMode ? "ON" : "OFF") << std::endl;
                 }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a)
                 {
@@ -641,4 +718,9 @@ void MandelbrotApp::run()
 
         SDL_Delay(16); // ~60 FPS
     }
+}
+
+void MandelbrotApp::setExitAfterFirstDisplay(bool exit)
+{
+    exitAfterFirstDisplay = exit;
 }

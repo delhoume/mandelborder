@@ -1,12 +1,48 @@
 #include "mandelbrot_app.h"
 #include <iostream>
+#include <cstring>
 
 int main(int argc, char *argv[])
 {
     try
     {
+        // Parse command line arguments
+        bool speedMode = false;
+        bool exitAfterFirstDisplay = false;
+
+        for (int i = 1; i < argc; ++i)
+        {
+            if (strcmp(argv[i], "--speed") == 0 || strcmp(argv[i], "-s") == 0)
+            {
+                speedMode = true;
+                std::cout << "Speed mode enabled (parallel 4x4 grid)" << std::endl;
+            }
+            else if (strcmp(argv[i], "--exit") == 0 || strcmp(argv[i], "-e") == 0)
+            {
+                exitAfterFirstDisplay = true;
+                std::cout << "Will exit after first display" << std::endl;
+            }
+            else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0)
+            {
+                std::cout << "Usage: " << argv[0] << " [options]" << std::endl;
+                std::cout << "Options:" << std::endl;
+                std::cout << "  --speed, -s         Enable speed mode (parallel computation)" << std::endl;
+                std::cout << "  --exit, -e          Exit after first display (for benchmarking)" << std::endl;
+                std::cout << "  --help, -h          Show this help message" << std::endl;
+                return 0;
+            }
+        }
+
         // Default resolution 800x600
-        MandelbrotApp app(800, 600);
+        // Speed mode: 4x4 grid with parallel computation
+        // Normal mode: 1x1 grid (single calculator) with progressive rendering
+        MandelbrotApp app(800, 600, speedMode);
+        
+        if (exitAfterFirstDisplay)
+        {
+            app.setExitAfterFirstDisplay(true);
+        }
+        
         app.run();
     }
     catch (const std::exception &e)

@@ -4,16 +4,18 @@
 #include <vector>
 #include <memory>
 #include "mandelbrot_calculator.h"
+#include "grid_mandelbrot_calculator.h"
 #include "zoom_point_chooser.h"
 #include "gradient.h"
 
 class MandelbrotApp
 {
 public:
-    MandelbrotApp(int width, int height);
+    MandelbrotApp(int width, int height, bool speedMode = false);
     ~MandelbrotApp();
 
     void run();
+    void setExitAfterFirstDisplay(bool exit);
 
 private:
     int width;
@@ -31,8 +33,12 @@ private:
     std::unique_ptr<Gradient> gradient;
 
     bool autoZoomActive;
+    bool speedMode;
+    bool verboseMode;
+    bool exitAfterFirstDisplay;
 
     void initSDL();
+    void createCalculator();
     void render();
     void handleResize(int newWidth, int newHeight);
 

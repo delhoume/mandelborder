@@ -1,12 +1,12 @@
-#include "mandelbrot_calculator.h"
+#include "border_mandelbrot_calculator.h"
 #include <iostream>
 #include <iomanip>
 #include <chrono>
 #include <cmath>
 #include <algorithm>
 
-MandelbrotCalculator::MandelbrotCalculator(int w, int h)
-    : width(w), height(h), queueHead(0), queueTail(0), speedMode(false)
+BorderMandelbrotCalculator::BorderMandelbrotCalculator(int w, int h)
+    : width(w), height(h), queueHead(0), queueTail(0), speedMode(false), verboseMode(false)
 {
     data.resize(width * height, MAX_ITER);
     done.resize(width * height, 0);
@@ -17,7 +17,7 @@ MandelbrotCalculator::MandelbrotCalculator(int w, int h)
     updateBounds(-0.5, 0.0, 3.0);
 }
 
-void MandelbrotCalculator::updateBounds(double new_cre, double new_cim, double new_diam)
+void BorderMandelbrotCalculator::updateBounds(double new_cre, double new_cim, double new_diam)
 {
     cre = new_cre;
     cim = new_cim;
@@ -30,14 +30,30 @@ void MandelbrotCalculator::updateBounds(double new_cre, double new_cim, double n
     stepi = (maxi - mini) / height;
 }
 
-void MandelbrotCalculator::reset()
+void BorderMandelbrotCalculator::updateBoundsExplicit(double new_minr, double new_mini, double new_maxr, double new_maxi)
+{
+    minr = new_minr;
+    mini = new_mini;
+    maxr = new_maxr;
+    maxi = new_maxi;
+    
+    // Calculate center and diameter from the explicit bounds
+    cre = (minr + maxr) / 2.0;
+    cim = (mini + maxi) / 2.0;
+    diam = std::max(maxr - minr, maxi - mini);
+    
+    stepr = (maxr - minr) / width;
+    stepi = (maxi - mini) / height;
+}
+
+void BorderMandelbrotCalculator::reset()
 {
     std::fill(data.begin(), data.end(), MAX_ITER);
     std::fill(done.begin(), done.end(), 0);
     queueHead = queueTail = 0;
 }
 
-int MandelbrotCalculator::iterate(double x, double y)
+int BorderMandelbrotCalculator::iterate(double x, double y)
 {
     double r = x, i = y;
     int iter;
@@ -58,7 +74,7 @@ int MandelbrotCalculator::iterate(double x, double y)
     return iter;
 }
 
-void MandelbrotCalculator::addQueue(unsigned p)
+void BorderMandelbrotCalculator::addQueue(unsigned p)
 {
     if (done[p] & QUEUED)
         return;
@@ -68,7 +84,7 @@ void MandelbrotCalculator::addQueue(unsigned p)
         queueHead = 0;
 }
 
-int MandelbrotCalculator::load(unsigned p)
+int BorderMandelbrotCalculator::load(unsigned p)
 {
     if (done[p] & LOADED)
         return data[p];
@@ -82,7 +98,7 @@ int MandelbrotCalculator::load(unsigned p)
     return data[p] = result;
 }
 
-void MandelbrotCalculator::scan(unsigned p)
+void BorderMandelbrotCalculator::scan(unsigned p)
 {
     int x = p % width;
     int y = p / width;
@@ -120,10 +136,8 @@ void MandelbrotCalculator::scan(unsigned p)
         addQueue(p + width + 1);
 }
 
-void MandelbrotCalculator::compute(std::function<void()> progressCallback)
+void BorderMandelbrotCalculator::compute(std::function<void()> progressCallback)
 {
-    std::cout << "Computing Mandelbrot set using boundary tracing..." << std::endl;
-
     // Start high-precision timer
     auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -192,16 +206,22 @@ void MandelbrotCalculator::compute(std::function<void()> progressCallback)
 
     unsigned totalPixels = width * height;
     double ratio = (double)processed / totalPixels * 100.0;
-    std::cout << "Computation complete! Processed " << processed << " / " << totalPixels
-              << " pixels (" << std::fixed << std::setprecision(1) << ratio << "%)";
-
-    if (speedMode)
+    
+    if (verboseMode)
     {
-        double processedPixelsPerSec = processed / seconds;
-        double totalPixelsPerSec = totalPixels / seconds;
-        std::cout << " in " << std::fixed << std::setprecision(1) << milliseconds << " ms"
-                  << " (" << std::fixed << std::setprecision(0) << processedPixelsPerSec << " processed px/s"
-                  << ", " << std::fixed << std::setprecision(0) << totalPixelsPerSec << " total px/s)";
+        // Show timing information in verbose mode
+        double processedPixelsPerSec = seconds > 0 ? processed / seconds : 0;
+        double totalPixelsPerSec = seconds > 0 ? totalPixels / seconds : 0;
+        
+        std::cout << "Computation complete! Processed " << processed << " / " << totalPixels
+                  << " pixels (" << std::fixed << std::setprecision(1) << ratio << "%)"
+                  << " in " << std::fixed << std::setprecision(1) << milliseconds << " ms";
+        
+        if (speedMode)
+        {
+            std::cout << " (" << std::fixed << std::setprecision(0) << processedPixelsPerSec << " processed px/s"
+                      << ", " << std::fixed << std::setprecision(0) << totalPixelsPerSec << " total px/s)";
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
 }

@@ -3,56 +3,37 @@
 #include <vector>
 #include <functional>
 
+// Abstract base class for Mandelbrot set calculators
 class MandelbrotCalculator
 {
 public:
-    MandelbrotCalculator(int width, int height);
+    virtual ~MandelbrotCalculator() = default;
 
-    void updateBounds(double cre, double cim, double diam);
-    void compute(std::function<void()> progressCallback);
-    void reset();
+    // Core computation interface
+    virtual void updateBounds(double cre, double cim, double diam) = 0;
+    virtual void updateBoundsExplicit(double minR, double minI, double maxR, double maxI) = 0;
+    virtual void compute(std::function<void()> progressCallback) = 0;
+    virtual void reset() = 0;
 
-    const std::vector<int> &getData() const { return data; }
-    int getWidth() const { return width; }
-    int getHeight() const { return height; }
+    // Data access
+    virtual const std::vector<int> &getData() const = 0;
+    virtual int getWidth() const = 0;
+    virtual int getHeight() const = 0;
 
-    // Getters for current view parameters
-    double getCre() const { return cre; }
-    double getCim() const { return cim; }
-    double getDiam() const { return diam; }
-    double getMinR() const { return minr; }
-    double getMinI() const { return mini; }
-    double getStepR() const { return stepr; }
-    double getStepI() const { return stepi; }
+    // View parameters
+    virtual double getCre() const = 0;
+    virtual double getCim() const = 0;
+    virtual double getDiam() const = 0;
+    virtual double getMinR() const = 0;
+    virtual double getMinI() const = 0;
+    virtual double getStepR() const = 0;
+    virtual double getStepI() const = 0;
 
-    void setSpeedMode(bool mode) { speedMode = mode; }
-    bool getSpeedMode() const { return speedMode; }
+    // Configuration
+    virtual void setSpeedMode(bool mode) = 0;
+    virtual bool getSpeedMode() const = 0;
+    virtual void setVerboseMode(bool mode) = 0;
+    virtual bool getVerboseMode() const = 0;
 
     static constexpr int MAX_ITER = 768;
-
-private:
-    int width;
-    int height;
-
-    double cre, cim, diam;
-    double minr, mini, maxr, maxi;
-    double stepr, stepi;
-
-    std::vector<int> data;
-    std::vector<unsigned char> done;
-    std::vector<unsigned> queue;
-    unsigned queueHead, queueTail;
-
-    bool speedMode;
-
-    enum Flags
-    {
-        LOADED = 1,
-        QUEUED = 2
-    };
-
-    int iterate(double x, double y);
-    void addQueue(unsigned p);
-    int load(unsigned p);
-    void scan(unsigned p);
 };
