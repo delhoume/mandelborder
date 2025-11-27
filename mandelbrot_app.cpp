@@ -164,6 +164,11 @@ void MandelbrotApp::resetZoom()
     calculator->updateBounds(-0.5, 0.0, 3.0);
 }
 
+bool MandelbrotApp::isZoomDisabled() const
+{
+    return calculator->getDiam() < 1e-15;
+}
+
 void MandelbrotApp::setPixelSize(int newSize)
 {
     if (pixelSize == newSize)
@@ -297,6 +302,13 @@ void MandelbrotApp::blinkRect(int x, int y, int w, int h, int times, int blinkDe
 
 void MandelbrotApp::zoomToRect(int x1, int y1, int x2, int y2, bool inverse)
 {
+    // Disable zoom-in when diameter is too small
+    if (!inverse && isZoomDisabled())
+    {
+        std::cout << "Zoom disabled: diameter too small (" << calculator->getDiam() << ")" << std::endl;
+        return;
+    }
+
     if (inverse)
     {
         // Zoom OUT: animate full screen shrinking to rectangle
@@ -454,6 +466,13 @@ void MandelbrotApp::run()
                     SDL_Keymod modState = SDL_GetModState();
                     bool shiftPressed = (modState & KMOD_SHIFT) != 0;
 
+                    // Skip zoom-in if disabled (allow zoom-out)
+                    if (!shiftPressed && isZoomDisabled())
+                    {
+                        std::cout << "Zoom disabled: diameter too small (" << calculator->getDiam() << ")" << std::endl;
+                        break;
+                    }
+
                     int x1, y1, x2, y2;
 
                     // Check if this was a click (no drag) vs a drag
@@ -515,33 +534,48 @@ void MandelbrotApp::run()
         // Auto-zoom functionality
         if (autoZoomActive)
         {
-            // Calculate zoom rectangle dimensions in calculation coordinates
-            int calcRectW = calcWidth / 4;
-            int calcRectH = calcHeight / 4;
+            // Check if zoom is disabled, reset to home if so
+            if (isZoomDisabled())
+            {
+                std::cout << "Auto-zoom: diameter limit reached, resetting to home" << std::endl;
+                gradient = Gradient::createRandom();
+                std::cout << "Switched to new random palette" << std::endl;
+                resetZoom();
+                calculator->reset();
+                calculator->compute([this]()
+                                    { this->render(); });
+                render();
+            }
+            else
+            {
+                // Calculate zoom rectangle dimensions in calculation coordinates
+                int calcRectW = calcWidth / 4;
+                int calcRectH = calcHeight / 4;
 
-            // Find an interesting point to zoom to (in calculation coordinates)
-            int calcCenterX, calcCenterY;
-            zoomChooser->findInterestingPoint(calculator->getData(),
-                                              MandelbrotCalculator::MAX_ITER,
-                                              calcCenterX, calcCenterY,
-                                              calcRectW, calcRectH);
+                // Find an interesting point to zoom to (in calculation coordinates)
+                int calcCenterX, calcCenterY;
+                zoomChooser->findInterestingPoint(calculator->getData(),
+                                                  MandelbrotCalculator::MAX_ITER,
+                                                  calcCenterX, calcCenterY,
+                                                  calcRectW, calcRectH);
 
-            // Convert back to window coordinates for display and zooming
-            int rectW = calcRectW * pixelSize;
-            int rectH = calcRectH * pixelSize;
-            int centerX = calcCenterX * pixelSize;
-            int centerY = calcCenterY * pixelSize;
+                // Convert back to window coordinates for display and zooming
+                int rectW = calcRectW * pixelSize;
+                int rectH = calcRectH * pixelSize;
+                int centerX = calcCenterX * pixelSize;
+                int centerY = calcCenterY * pixelSize;
 
-            int x1 = centerX - rectW / 2;
-            int y1 = centerY - rectH / 2;
-            int x2 = x1 + rectW;
-            int y2 = y1 + rectH;
+                int x1 = centerX - rectW / 2;
+                int y1 = centerY - rectH / 2;
+                int x2 = x1 + rectW;
+                int y2 = y1 + rectH;
 
-            // Blink the rectangle 3 times before zooming
-            blinkRect(x1, y1, rectW, rectH, 3, 150);
+                // Blink the rectangle 3 times before zooming
+                blinkRect(x1, y1, rectW, rectH, 3, 150);
 
-            // Perform the zoom
-            zoomToRect(x1, y1, x2, y2, false);
+                // Perform the zoom
+                zoomToRect(x1, y1, x2, y2, false);
+            }
         }
 
         SDL_Delay(16); // ~60 FPS

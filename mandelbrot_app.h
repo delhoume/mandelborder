@@ -45,4 +45,5 @@ private:
     void blinkRect(int x, int y, int w, int h, int times = 3, int blinkDelay = 150);
     void resetZoom();
     void setPixelSize(int newSize);
+    bool isZoomDisabled() const;
 };
