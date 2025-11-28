@@ -1,10 +1,5 @@
 #include "standard_mandelbrot_calculator.h"
-#include <iostream>
-#include <iomanip>
-#include <chrono>
 #include <cmath>
-#include <algorithm>
-#include <format>
 
 StandardMandelbrotCalculator::StandardMandelbrotCalculator(int w, int h)
     : StorageMandelbrotCalculator(w, h)

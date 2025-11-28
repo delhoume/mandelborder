@@ -1,11 +1,6 @@
 #include "border_mandelbrot_calculator.h"
-#include <iostream>
-#include <iomanip>
-#include <chrono>
 #include <cmath>
 #include <algorithm>
-#include <format>
-#include <format>
 
 BorderMandelbrotCalculator::BorderMandelbrotCalculator(int w, int h)
     : StorageMandelbrotCalculator(w, h), queueHead(0), queueTail(0)

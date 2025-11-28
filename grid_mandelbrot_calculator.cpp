@@ -1,14 +1,9 @@
 #include "grid_mandelbrot_calculator.h"
 #include "simd_mandelbrot_calculator.h"
 #include "gpu_mandelbrot_calculator.h"
-#include <iostream>
-#include <iomanip>
-#include <chrono>
-#include <cmath>
 #include <format>
 #include <thread>
 #include <vector>
-#include <mutex>
 
 GridMandelbrotCalculator::GridMandelbrotCalculator(int w, int h, int rows, int cols)
     : StorageMandelbrotCalculator(w, h), gridRows(rows), gridCols(cols), engineType(EngineType::BORDER)

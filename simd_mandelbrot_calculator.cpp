@@ -1,11 +1,6 @@
 #include "simd_mandelbrot_calculator.h"
-#include <iostream>
-#include <iomanip>
-#include <chrono>
 #include <cmath>
-#include <algorithm>
 #include <array>
-#include <format>
 
 SimdMandelbrotCalculator::SimdMandelbrotCalculator(int w, int h)
     : StorageMandelbrotCalculator(w, h)
