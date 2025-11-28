@@ -11,6 +11,8 @@ public:
     StandardMandelbrotCalculator(int width, int height);
 
     void compute(std::function<void()> progressCallback) override;
+    
+    std::string getEngineName() const override { return "  std"; }
 
 private:
     int iterate(double x, double y);

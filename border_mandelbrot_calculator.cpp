@@ -4,6 +4,8 @@
 #include <chrono>
 #include <cmath>
 #include <algorithm>
+#include <format>
+#include <format>
 
 BorderMandelbrotCalculator::BorderMandelbrotCalculator(int w, int h)
     : StorageMandelbrotCalculator(w, h), queueHead(0), queueTail(0)
@@ -106,7 +108,9 @@ void BorderMandelbrotCalculator::scan(unsigned p)
 void BorderMandelbrotCalculator::compute(std::function<void()> progressCallback)
 {
     // Start high-precision timer
-    auto startTime = std::chrono::high_resolution_clock::now();
+    data.assign(width * height, 0);
+
+    // First Pass: Border Tracing
 
     // Start by adding screen edges to queue
     for (int y = 0; y < height; ++y)
@@ -165,27 +169,4 @@ void BorderMandelbrotCalculator::compute(std::function<void()> progressCallback)
         }
     }
 
-    // Stop timer and calculate elapsed time
-    auto endTime = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
-    double milliseconds = duration.count() / 1000.0;
-    double seconds = duration.count() / 1000000.0;
-
-    unsigned totalPixels = width * height;
-    double ratio = (double)processed / totalPixels * 100.0;
-    
-    if (verboseMode)
-    {
-        // Show timing information in verbose mode
-        double processedPixelsPerSec = seconds > 0 ? processed / seconds : 0;
-        double totalPixelsPerSec = seconds > 0 ? totalPixels / seconds : 0;
-        
-        std::cout << "Computation complete! Processed " << processed << " / " << totalPixels
-                  << " pixels (" << std::fixed << std::setprecision(1) << ratio << "%)"
-                  << " in " << std::fixed << std::setprecision(1) << milliseconds << " ms";
-        
-        std::cout << " (" << std::fixed << std::setprecision(0) << processedPixelsPerSec << " processed px/s"
-                    << ", " << std::fixed << std::setprecision(0) << totalPixelsPerSec << " total px/s)";
-        std::cout << std::endl;
-    }
 }

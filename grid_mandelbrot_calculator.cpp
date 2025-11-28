@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <chrono>
 #include <cmath>
+#include <format>
 #include <thread>
 #include <vector>
 #include <mutex>
@@ -186,8 +187,6 @@ void GridMandelbrotCalculator::compositeData()
 
 void GridMandelbrotCalculator::compute(std::function<void()> progressCallback)
 {
-    auto startTime = std::chrono::high_resolution_clock::now();
-
     unsigned long long totalComposites = 0; // Track how many times we composite
 
     // GPU engine must run on the main thread (where the GL context is current)
@@ -233,13 +232,6 @@ void GridMandelbrotCalculator::compute(std::function<void()> progressCallback)
         // SEQUENTIAL MODE: Compute tiles one at a time with progressive rendering
         for (int tileIdx = 0; tileIdx < gridRows * gridCols; ++tileIdx)
         {
-            auto tileStartTime = std::chrono::high_resolution_clock::now();
-
-            if (verboseMode)
-            {
-                std::cout << "  Computing tile " << (tileIdx + 1) << "/" << (gridRows * gridCols) << "..." << std::endl;
-            }
-
             // Normal mode: compute with progress callback that composites only this tile and renders
             tiles[tileIdx]->compute([this, tileIdx, progressCallback, &totalComposites]()
                                     {
@@ -289,15 +281,6 @@ void GridMandelbrotCalculator::compute(std::function<void()> progressCallback)
                 progressCallback();
             }
 
-            auto tileEndTime = std::chrono::high_resolution_clock::now();
-            auto tileDuration = std::chrono::duration_cast<std::chrono::microseconds>(tileEndTime - tileStartTime);
-            double tileMs = tileDuration.count() / 1000.0;
-
-            if (verboseMode)
-            {
-                std::cout << "    Tile " << (tileIdx + 1) << " completed in "
-                          << std::fixed << std::setprecision(1) << tileMs << " ms" << std::endl;
-            }
         }
     }
 
@@ -322,23 +305,6 @@ void GridMandelbrotCalculator::compute(std::function<void()> progressCallback)
         }
         totalComposites = 1; // Only one composite at the end
     }
-
-    auto endTime = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
-    double milliseconds = duration.count() / 1000.0;
-    double seconds = duration.count() / 1000000.0;
-
-    if (verboseMode)
-    {
-        unsigned totalPixels = width * height;
-        double pixelsPerSec = seconds > 0 ? totalPixels / seconds : 0;
-
-        std::cout << "Grid computation complete in " << std::fixed << std::setprecision(1)
-                  << milliseconds << " ms ("
-                  << std::fixed << std::setprecision(0) << pixelsPerSec << " px/s, "
-                  << totalComposites << " composites, "
-                  << (gridRows * gridCols) << " tiles)" << std::endl;
-    }
 }
 
 void GridMandelbrotCalculator::setEngineType(EngineType type)
@@ -360,4 +326,20 @@ bool GridMandelbrotCalculator::hasOwnOutput() const
 void GridMandelbrotCalculator::render()
 {
     // Nothing to do here
+}
+
+std::string GridMandelbrotCalculator::getEngineName() const
+{
+    if (tiles.empty())
+        return "unknown";
+    
+    std::string baseName = tiles[0]->getEngineName();
+    
+    // Append grid info if grid is larger than 1x1
+    if (gridRows > 1 || gridCols > 1)
+    {
+        return baseName + std::format(" {:>4}x{:<4}", gridRows, gridCols);
+    }
+    
+    return baseName;
 }

@@ -20,27 +20,22 @@ int main(int argc, char *argv[])
             if (strcmp(argv[i], "--speed") == 0 || strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--fast") == 0 || strcmp(argv[i], "-f") == 0)
             {
                 speedMode = true;
-                std::cout << "Fast mode enabled (parallel 4x4 grid)" << std::endl;
             }
             else if (strcmp(argv[i], "--exit") == 0 || strcmp(argv[i], "-e") == 0)
             {
                 exitAfterFirstDisplay = true;
-                std::cout << "Will exit after first display" << std::endl;
             }
             else if (strcmp(argv[i], "--verbose") == 0 || strcmp(argv[i], "-v") == 0)
             {
                 verboseMode = true;
-                std::cout << "Verbose mode enabled" << std::endl;
             }
             else if (strcmp(argv[i], "--auto-zoom") == 0 || strcmp(argv[i], "-a") == 0)
             {
                 autoZoom = true;
-                std::cout << "Auto-zoom enabled" << std::endl;
             }
             else if (strcmp(argv[i], "--random-palette") == 0 || strcmp(argv[i], "-p") == 0)
             {
                 randomPalette = true;
-                std::cout << "Random palette enabled" << std::endl;
             }
             else if (strcmp(argv[i], "--pixel-size") == 0)
             {
@@ -49,7 +44,6 @@ int main(int argc, char *argv[])
                     pixelSize = std::atoi(argv[++i]);
                     if (pixelSize < 1) pixelSize = 1;
                     if (pixelSize > 20) pixelSize = 20;
-                    std::cout << "Pixel size: " << pixelSize << std::endl;
                 }
                 else
                 {
@@ -62,7 +56,6 @@ int main(int argc, char *argv[])
                 if (i + 1 < argc)
                 {
                     engineType = argv[++i];
-                    std::cout << "Engine type: " << engineType << std::endl;
                 }
                 else
                 {

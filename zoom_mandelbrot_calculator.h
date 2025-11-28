@@ -23,9 +23,6 @@ public:
 
     void setSpeedMode(bool mode) override { speedMode = mode; }
     bool getSpeedMode() const override { return speedMode; }
-    
-    void setVerboseMode(bool mode) override { verboseMode = mode; }
-    bool getVerboseMode() const override { return verboseMode; }
 
 protected:
     int width;
@@ -36,5 +33,4 @@ protected:
     double stepr, stepi;
 
     bool speedMode;
-    bool verboseMode;
 };

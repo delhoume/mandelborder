@@ -31,6 +31,8 @@ public:
 
     void setEngineType(EngineType type);
     EngineType getEngineType() const { return engineType; }
+    
+    std::string getEngineName() const override;
 
     // Override to handle GPU pass-through
     bool hasOwnOutput() const override;

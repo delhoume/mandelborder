@@ -12,6 +12,8 @@ public:
 
     void compute(std::function<void()> progressCallback) override;
     void reset() override;
+    
+    std::string getEngineName() const override { return "border"; }
 
 private:
     std::vector<unsigned char> done;

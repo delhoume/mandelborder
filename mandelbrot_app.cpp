@@ -8,6 +8,8 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
+#include <format>
+#include <chrono>
 #include <chrono>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -72,17 +74,7 @@ MandelbrotApp::MandelbrotApp(int w, int h, bool speed, const std::string &engine
     if (glContext)
     {
         ownsGLContext = false; // We don't own it, the renderer does
-        std::cout << "Using OpenGL context from renderer." << std::endl;
-        const char *glVersion = (const char *)glGetString(GL_VERSION);
-        if (glVersion)
-        {
-            std::cout << "OpenGL Version: " << glVersion << std::endl;
-        }
         SDL_GL_SetSwapInterval(0); // Disable VSync for offscreen rendering
-    }
-    else
-    {
-        std::cout << "No OpenGL context available (software renderer)." << std::endl;
     }
 
     texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
@@ -100,7 +92,6 @@ MandelbrotApp::MandelbrotApp(int w, int h, bool speed, const std::string &engine
         // GPU always uses 1x1 grid
         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
         gridCalc->setSpeedMode(speedMode);
-        gridCalc->setVerboseMode(verboseMode);
         gridCalc->setEngineType(currentEngineType);
         calculator = std::move(gridCalc);
     }
@@ -108,7 +99,6 @@ MandelbrotApp::MandelbrotApp(int w, int h, bool speed, const std::string &engine
     {
         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 4, 4);
         gridCalc->setSpeedMode(true);
-        gridCalc->setVerboseMode(verboseMode);
         gridCalc->setEngineType(currentEngineType);
         calculator = std::move(gridCalc);
     }
@@ -116,7 +106,6 @@ MandelbrotApp::MandelbrotApp(int w, int h, bool speed, const std::string &engine
     {
         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
         gridCalc->setSpeedMode(false);
-        gridCalc->setVerboseMode(verboseMode);
         gridCalc->setEngineType(currentEngineType);
         calculator = std::move(gridCalc);
     }
@@ -175,8 +164,6 @@ void MandelbrotApp::initSDL()
 
 void MandelbrotApp::compute()
 {
-    auto startTime = std::chrono::high_resolution_clock::now();
-
     // For GPU mode, ensure OpenGL context is current
     if ((currentEngineType == GridMandelbrotCalculator::EngineType::GPUF ||
          currentEngineType == GridMandelbrotCalculator::EngineType::GPUD) &&
@@ -185,17 +172,27 @@ void MandelbrotApp::compute()
         SDL_GL_MakeCurrent(window, glContext);
     }
 
-    calculator->compute([this, startTime]()
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    calculator->compute([this]()
                         {
                             this->render();
+                        });
 
-                            // Print timing if verbose mode is enabled
-                            if (this->verboseMode)
-                            {
-                                auto endTime = std::chrono::high_resolution_clock::now();
-                                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-                                std::cout << "Compute + Render time: " << duration.count() << " ms" << std::endl;
-                            } });
+    if (verboseMode)
+    {
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
+        double milliseconds = duration.count() / 1000.0;
+
+        std::string engineName = calculator->getEngineName();
+        
+        std::cout << std::format("{} {:>4}x{:<4} {:>8.1f} ms  {:>20.16f} {:>20.16f} {:>12.2e}\n",
+                                 engineName,
+                                 calculator->getWidth(), calculator->getHeight(),
+                                 milliseconds,
+                                 calculator->getCre(), calculator->getCim(), calculator->getDiam());
+    }
 }
 
 void MandelbrotApp::render()
@@ -338,7 +335,6 @@ void MandelbrotApp::setPixelSize(int newSize)
     {
         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
         gridCalc->setSpeedMode(speedMode);
-        gridCalc->setVerboseMode(verboseMode);
         gridCalc->setEngineType(currentEngineType);
         calculator = std::move(gridCalc);
     }
@@ -346,7 +342,6 @@ void MandelbrotApp::setPixelSize(int newSize)
     {
         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 4, 4);
         gridCalc->setSpeedMode(true);
-        gridCalc->setVerboseMode(verboseMode);
         gridCalc->setEngineType(currentEngineType);
         calculator = std::move(gridCalc);
     }
@@ -354,7 +349,6 @@ void MandelbrotApp::setPixelSize(int newSize)
     {
         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
         gridCalc->setSpeedMode(false);
-        gridCalc->setVerboseMode(verboseMode);
         gridCalc->setEngineType(currentEngineType);
         calculator = std::move(gridCalc);
     }
@@ -378,7 +372,7 @@ void MandelbrotApp::setPixelSize(int newSize)
     compute();
     render();
 
-    std::cout << "Pixel size set to: " << pixelSize << " (" << calcWidth << "x" << calcHeight << ")" << std::endl;
+    // Pixel size updated
 }
 
 void MandelbrotApp::handleResize(int newWidth, int newHeight)
@@ -403,7 +397,6 @@ void MandelbrotApp::handleResize(int newWidth, int newHeight)
     {
         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
         gridCalc->setSpeedMode(speedMode);
-        gridCalc->setVerboseMode(verboseMode);
         gridCalc->setEngineType(currentEngineType);
         calculator = std::move(gridCalc);
     }
@@ -411,7 +404,6 @@ void MandelbrotApp::handleResize(int newWidth, int newHeight)
     {
         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 4, 4);
         gridCalc->setSpeedMode(true);
-        gridCalc->setVerboseMode(verboseMode);
         gridCalc->setEngineType(currentEngineType);
         calculator = std::move(gridCalc);
     }
@@ -419,7 +411,6 @@ void MandelbrotApp::handleResize(int newWidth, int newHeight)
     {
         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
         gridCalc->setSpeedMode(false);
-        gridCalc->setVerboseMode(verboseMode);
         gridCalc->setEngineType(currentEngineType);
         calculator = std::move(gridCalc);
     }
@@ -444,8 +435,7 @@ void MandelbrotApp::handleResize(int newWidth, int newHeight)
     compute();
     render();
 
-    std::cout << "Window resized to: " << width << "x" << height
-              << " (calc: " << calcWidth << "x" << calcHeight << ")" << std::endl;
+    // Window resized
 }
 
 void MandelbrotApp::zoomToRegion(int x1, int y1, int x2, int y2)
@@ -476,16 +466,7 @@ void MandelbrotApp::zoomToRegion(int x1, int y1, int x2, int y2)
     double new_diam = std::max(re2 - re1, im2 - im1);
 
     calculator->updateBounds(new_cre, new_cim, new_diam);
-
-    if (verboseMode)
-    {
-        std::cout << "Zoomed to: center=(" << std::scientific << std::setprecision(10)
-                  << calculator->getCre() << ", " << calculator->getCim()
-                  << "), diameter=" << calculator->getDiam() << std::defaultfloat << std::endl;
-    }
-}
-
-void MandelbrotApp::animateRectToRect(int startX, int startY, int startWidth, int startHeight,
+}void MandelbrotApp::animateRectToRect(int startX, int startY, int startWidth, int startHeight,
                                       int endX, int endY, int endWidth, int endHeight,
                                       int steps, int frameDelay)
 {
@@ -546,7 +527,6 @@ void MandelbrotApp::zoomToRect(int x1, int y1, int x2, int y2, bool inverse)
     // Disable zoom-in when diameter is too small
     if (!inverse && isZoomDisabled())
     {
-        std::cout << "Zoom disabled: diameter too small (" << calculator->getDiam() << ")" << std::endl;
         return;
     }
 
@@ -583,16 +563,9 @@ void MandelbrotApp::zoomToRect(int x1, int y1, int x2, int y2, bool inverse)
 
 void MandelbrotApp::run()
 {
-    compute();
-    render();
-
-    if (exitAfterFirstDisplay)
+    if (!exitAfterFirstDisplay)
     {
-        std::cout << "Exiting after first display as requested" << std::endl;
-        return;
-    }
-
-    std::cout << "Keyboard controls:" << std::endl;
+        std::cout << "Keyboard controls:" << std::endl;
     std::cout << "  ESC      - Quit (or cancel drag)" << std::endl;
     std::cout << "  SPACE    - Recompute" << std::endl;
     std::cout << "  R        - Reset zoom to full set" << std::endl;
@@ -608,6 +581,16 @@ void MandelbrotApp::run()
     std::cout << "  Drag     - Zoom into region" << std::endl;
     std::cout << "  Shift+Drag - Zoom out from region" << std::endl;
     std::cout << "  Ctrl+Drag  - Center-based zoom" << std::endl;
+    }
+
+    compute();
+    render();
+
+    if (exitAfterFirstDisplay)
+    {
+        std::cout << "Exiting after first display as requested" << std::endl;
+        return;
+    }
 
     bool running = true;
     SDL_Event event;
@@ -669,10 +652,9 @@ void MandelbrotApp::run()
                     if (modState & KMOD_SHIFT)
                     {
                         // Toggle auto-screenshot mode (Shift+S)
+                    {
                         autoScreenshotMode = !autoScreenshotMode;
-                        std::cout << "Auto-screenshot mode: " << (autoScreenshotMode ? "ON" : "OFF") << std::endl;
-                        
-                        // If we just enabled auto-screenshot, capture the current frame immediately
+                    }                        // If we just enabled auto-screenshot, capture the current frame immediately
                         if (autoScreenshotMode)
                         {
                             saveScreenshot("mandelbrot");
@@ -700,7 +682,6 @@ void MandelbrotApp::run()
                     {
                         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
                         gridCalc->setSpeedMode(speedMode);
-                        gridCalc->setVerboseMode(verboseMode);
                         gridCalc->setEngineType(currentEngineType);
                         calculator = std::move(gridCalc);
                         std::cout << "Speed mode: " << (speedMode ? "ON" : "OFF") << " (GPU 1x1)" << std::endl;
@@ -709,19 +690,15 @@ void MandelbrotApp::run()
                     {
                         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 4, 4);
                         gridCalc->setSpeedMode(true);
-                        gridCalc->setVerboseMode(verboseMode);
                         gridCalc->setEngineType(currentEngineType);
                         calculator = std::move(gridCalc);
-                        std::cout << "Fast mode: ON (parallel 4x4 grid)" << std::endl;
                     }
                     else
                     {
                         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
                         gridCalc->setSpeedMode(false);
-                        gridCalc->setVerboseMode(verboseMode);
                         gridCalc->setEngineType(currentEngineType);
                         calculator = std::move(gridCalc);
-                        std::cout << "Fast mode: OFF (progressive 1x1)" << std::endl;
                     }
                     calculator->updateBounds(currentCre, currentCim, currentDiam);
 
@@ -735,27 +712,22 @@ void MandelbrotApp::run()
                     if (currentEngineType == GridMandelbrotCalculator::EngineType::BORDER)
                     {
                         currentEngineType = GridMandelbrotCalculator::EngineType::STANDARD;
-                        std::cout << "Switched to STANDARD engine" << std::endl;
                     }
                     else if (currentEngineType == GridMandelbrotCalculator::EngineType::STANDARD)
                     {
                         currentEngineType = GridMandelbrotCalculator::EngineType::SIMD;
-                        std::cout << "Switched to SIMD engine" << std::endl;
                     }
                     else if (currentEngineType == GridMandelbrotCalculator::EngineType::SIMD)
                     {
                         currentEngineType = GridMandelbrotCalculator::EngineType::GPUF;
-                        std::cout << "Switched to GPUF (GPU float) engine" << std::endl;
                     }
                     else if (currentEngineType == GridMandelbrotCalculator::EngineType::GPUF)
                     {
                         currentEngineType = GridMandelbrotCalculator::EngineType::GPUD;
-                        std::cout << "Switched to GPUD (GPU double) engine" << std::endl;
                     }
                     else
                     {
                         currentEngineType = GridMandelbrotCalculator::EngineType::BORDER;
-                        std::cout << "Switched to BORDER engine" << std::endl;
                     }
 
                     // Save current view parameters
@@ -771,7 +743,6 @@ void MandelbrotApp::run()
                         // OpenGL context is already created at startup
                         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, 1, 1);
                         gridCalc->setSpeedMode(speedMode);
-                        gridCalc->setVerboseMode(verboseMode);
                         gridCalc->setEngineType(currentEngineType);
                         calculator = std::move(gridCalc);
                     }
@@ -782,7 +753,6 @@ void MandelbrotApp::run()
                         int cols = speedMode ? 4 : 1;
                         auto gridCalc = std::make_unique<GridMandelbrotCalculator>(calcWidth, calcHeight, rows, cols);
                         gridCalc->setSpeedMode(speedMode);
-                        gridCalc->setVerboseMode(verboseMode);
                         gridCalc->setEngineType(currentEngineType);
                         calculator = std::move(gridCalc);
                     }
@@ -795,17 +765,14 @@ void MandelbrotApp::run()
                 {
                     gradient = Gradient::createRandom();
                     render();
-                    std::cout << "Switched to new random palette" << std::endl;
                 }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_v)
                 {
                     verboseMode = !verboseMode;
-                    std::cout << "Verbose mode: " << (verboseMode ? "ON" : "OFF") << std::endl;
                 }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a)
                 {
                     autoZoomActive = !autoZoomActive;
-                    std::cout << "Auto-zoom: " << (autoZoomActive ? "ON" : "OFF") << std::endl;
                 }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_x)
                 {
@@ -920,9 +887,7 @@ void MandelbrotApp::run()
             // Check if zoom is disabled, reset to home if so
             if (isZoomDisabled())
             {
-                std::cout << "Auto-zoom: diameter limit reached, resetting to home" << std::endl;
                 gradient = Gradient::createRandom();
-                std::cout << "Switched to new random palette" << std::endl;
                 resetZoom();
                 calculator->reset();
                 compute();
@@ -1069,18 +1034,15 @@ void MandelbrotApp::setVerboseMode(bool verbose)
     verboseMode = verbose;
     if (calculator)
     {
-        calculator->setVerboseMode(verbose);
     }
 }
 
 void MandelbrotApp::setAutoZoom(bool enabled)
 {
     autoZoomActive = enabled;
-    std::cout << "Auto-zoom: " << (autoZoomActive ? "ON" : "OFF") << std::endl;
 }
 
 void MandelbrotApp::setRandomPalette()
 {
     gradient = Gradient::createRandom();
-    std::cout << "Using random palette" << std::endl;
 }

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <functional>
+#include <string>
 
 // Abstract base class for Mandelbrot set calculators
 class MandelbrotCalculator
@@ -32,8 +33,9 @@ public:
     // Configuration
     virtual void setSpeedMode(bool mode) = 0;
     virtual bool getSpeedMode() const = 0;
-    virtual void setVerboseMode(bool mode) = 0;
-    virtual bool getVerboseMode() const = 0;
+    
+    // Engine identification for verbose output
+    virtual std::string getEngineName() const = 0;
 
     // Rendering (for GPU implementations)
     virtual bool hasOwnOutput() const { return false; }

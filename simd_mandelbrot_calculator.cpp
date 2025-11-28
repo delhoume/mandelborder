@@ -5,6 +5,7 @@
 #include <cmath>
 #include <algorithm>
 #include <array>
+#include <format>
 
 SimdMandelbrotCalculator::SimdMandelbrotCalculator(int w, int h)
     : StorageMandelbrotCalculator(w, h)
@@ -13,8 +14,6 @@ SimdMandelbrotCalculator::SimdMandelbrotCalculator(int w, int h)
 
 void SimdMandelbrotCalculator::compute(std::function<void()> progressCallback)
 {
-    auto startTime = std::chrono::high_resolution_clock::now();
-
     // Batch size for SIMD. 
     // AVX2 processes 4 doubles (256 bits). AVX-512 processes 8 doubles (512 bits).
     // 8 is a good number to unroll loops for.
@@ -116,21 +115,4 @@ void SimdMandelbrotCalculator::compute(std::function<void()> progressCallback)
         }
     }
 
-    auto endTime = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
-    double milliseconds = duration.count() / 1000.0;
-    double seconds = duration.count() / 1000000.0;
-
-    if (verboseMode)
-    {
-        unsigned totalPixels = width * height;
-        double totalPixelsPerSec = seconds > 0 ? totalPixels / seconds : 0;
-        
-        std::cout << "SIMD Computation complete! Processed " << processed << " / " << totalPixels
-                  << " pixels (100.0%)"
-                  << " in " << std::fixed << std::setprecision(1) << milliseconds << " ms";
-        
-        std::cout << " (" << std::fixed << std::setprecision(0) << totalPixelsPerSec << " total px/s)";
-        std::cout << std::endl;
-    }
 }

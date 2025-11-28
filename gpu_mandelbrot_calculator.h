@@ -28,6 +28,10 @@ public:
 
     // No longer has own output, behaves like standard calculator
     bool hasOwnOutput() const override { return false; }
+    
+    std::string getEngineName() const override { 
+        return (precision == Precision::FLOAT) ? " gpuf" : " gpud"; 
+    }
 
 private:
     std::vector<int> data;

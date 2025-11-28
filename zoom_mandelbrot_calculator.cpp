@@ -2,7 +2,7 @@
 #include <algorithm>
 
 ZoomMandelbrotCalculator::ZoomMandelbrotCalculator(int w, int h)
-    : width(w), height(h), speedMode(false), verboseMode(false)
+    : width(w), height(h), speedMode(false)
 {
     // Default initialization
     updateBounds(-0.5, 0.0, 3.0);
