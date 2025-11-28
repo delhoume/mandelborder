@@ -18,6 +18,9 @@ public:
     void run();
     void setExitAfterFirstDisplay(bool exit);
     void setVerboseMode(bool verbose);
+    void setAutoZoom(bool enabled);
+    void setRandomPalette();
+    void setPixelSize(int size);
 
 private:
     int width;
@@ -60,7 +63,6 @@ private:
                            int steps = 15, int frameDelay = 16);
     void blinkRect(int x, int y, int w, int h, int times = 3, int blinkDelay = 150);
     void resetZoom();
-    void setPixelSize(int newSize);
     bool isZoomDisabled() const;
     void saveScreenshot(const std::string& basename = "mandelbrot");
     std::string generateUniqueFilename(const std::string& basename, const std::string& extension);

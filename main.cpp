@@ -10,14 +10,17 @@ int main(int argc, char *argv[])
         bool speedMode = false;
         bool exitAfterFirstDisplay = false;
         bool verboseMode = false;
-        std::string engineType = "gpu"; // default to GPU on this branch
+        bool autoZoom = false;
+        bool randomPalette = false;
+        int pixelSize = 1;
+        std::string engineType = "border"; // default to border tracing
 
         for (int i = 1; i < argc; ++i)
         {
-            if (strcmp(argv[i], "--speed") == 0 || strcmp(argv[i], "-s") == 0)
+            if (strcmp(argv[i], "--speed") == 0 || strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--fast") == 0 || strcmp(argv[i], "-f") == 0)
             {
                 speedMode = true;
-                std::cout << "Speed mode enabled (parallel 4x4 grid)" << std::endl;
+                std::cout << "Fast mode enabled (parallel 4x4 grid)" << std::endl;
             }
             else if (strcmp(argv[i], "--exit") == 0 || strcmp(argv[i], "-e") == 0)
             {
@@ -28,6 +31,31 @@ int main(int argc, char *argv[])
             {
                 verboseMode = true;
                 std::cout << "Verbose mode enabled" << std::endl;
+            }
+            else if (strcmp(argv[i], "--auto-zoom") == 0 || strcmp(argv[i], "-a") == 0)
+            {
+                autoZoom = true;
+                std::cout << "Auto-zoom enabled" << std::endl;
+            }
+            else if (strcmp(argv[i], "--random-palette") == 0 || strcmp(argv[i], "-p") == 0)
+            {
+                randomPalette = true;
+                std::cout << "Random palette enabled" << std::endl;
+            }
+            else if (strcmp(argv[i], "--pixel-size") == 0)
+            {
+                if (i + 1 < argc)
+                {
+                    pixelSize = std::atoi(argv[++i]);
+                    if (pixelSize < 1) pixelSize = 1;
+                    if (pixelSize > 20) pixelSize = 20;
+                    std::cout << "Pixel size: " << pixelSize << std::endl;
+                }
+                else
+                {
+                    std::cerr << "Error: --pixel-size requires an argument (1-20)" << std::endl;
+                    return 1;
+                }
             }
             else if (strcmp(argv[i], "--engine") == 0)
             {
@@ -44,15 +72,38 @@ int main(int argc, char *argv[])
             }
             else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0)
             {
-                std::cout << "Usage: " << argv[0] << " [options]" << std::endl;
-                std::cout << "Options:" << std::endl;
-                std::cout << "  --speed, -s         Enable speed mode (parallel computation)" << std::endl;
-                std::cout << "  --exit, -e          Exit after first display (for benchmarking)" << std::endl;
-                std::cout << "  --verbose, -v       Enable verbose output (timing info)" << std::endl;
-                std::cout << "  --engine <type>     Set engine type (border|standard|simd|gpuf|gpud)" << std::endl;
-                std::cout << "                      gpuf = GPU with float precision (fast)" << std::endl;
-                std::cout << "                      gpud = GPU with double precision (accurate)" << std::endl;
-                std::cout << "  --help, -h          Show this help message" << std::endl;
+                std::cout << "Mandelbrot Set Explorer with Boundary Tracing" << std::endl;
+                std::cout << "\nUsage: " << argv[0] << " [options]" << std::endl;
+                std::cout << "\nOptions:" << std::endl;
+                std::cout << "  --fast, -f, --speed, -s    Enable fast mode (parallel 4x4 grid)" << std::endl;
+                std::cout << "  --engine <type>            Set computation engine:" << std::endl;
+                std::cout << "                             border   = Boundary tracing (default, fastest)" << std::endl;
+                std::cout << "                             standard = Standard pixel-by-pixel" << std::endl;
+                std::cout << "                             simd     = SIMD optimized" << std::endl;
+                std::cout << "                             gpuf     = GPU float precision (~50ms)" << std::endl;
+                std::cout << "                             gpud     = GPU double precision (~550ms)" << std::endl;
+                std::cout << "  --pixel-size <1-20>        Set pixel size (1=normal, 10=blocky)" << std::endl;
+                std::cout << "  --random-palette, -p       Start with random color palette" << std::endl;
+                std::cout << "  --auto-zoom, -a            Enable automatic zooming" << std::endl;
+                std::cout << "  --verbose, -v              Enable verbose output (timing info)" << std::endl;
+                std::cout << "  --exit, -e                 Exit after first render (benchmarking)" << std::endl;
+                std::cout << "  --help, -h                 Show this help message" << std::endl;
+                std::cout << "\nKeyboard Controls:" << std::endl;
+                std::cout << "  ESC      - Quit (or cancel drag)" << std::endl;
+                std::cout << "  SPACE    - Recompute" << std::endl;
+                std::cout << "  R        - Reset zoom to full set" << std::endl;
+                std::cout << "  F        - Toggle fast mode (parallel computation)" << std::endl;
+                std::cout << "  S        - Save screenshot" << std::endl;
+                std::cout << "  Shift+S  - Toggle auto-screenshot mode" << std::endl;
+                std::cout << "  E        - Cycle engine (Border→Standard→SIMD→GPU-Float→GPU-Double)" << std::endl;
+                std::cout << "  P        - Random palette" << std::endl;
+                std::cout << "  V        - Toggle verbose mode" << std::endl;
+                std::cout << "  A        - Toggle auto-zoom" << std::endl;
+                std::cout << "  X        - Toggle pixel size (1x or 10x)" << std::endl;
+                std::cout << "\nMouse Controls:" << std::endl;
+                std::cout << "  Drag       - Zoom into region" << std::endl;
+                std::cout << "  Shift+Drag - Zoom out from region" << std::endl;
+                std::cout << "  Ctrl+Drag  - Center-based zoom" << std::endl;
                 return 0;
             }
         }
@@ -70,6 +121,21 @@ int main(int argc, char *argv[])
         if (verboseMode)
         {
             app.setVerboseMode(true);
+        }
+
+        if (autoZoom)
+        {
+            app.setAutoZoom(true);
+        }
+
+        if (randomPalette)
+        {
+            app.setRandomPalette();
+        }
+
+        if (pixelSize != 1)
+        {
+            app.setPixelSize(pixelSize);
         }
 
         app.run();

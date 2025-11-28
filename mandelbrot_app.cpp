@@ -20,7 +20,7 @@
 MandelbrotApp::MandelbrotApp(int w, int h, bool speed, const std::string &engineType)
     : width(w), height(h), pixelSize(1), window(nullptr), renderer(nullptr), texture(nullptr), glContext(nullptr), ownsGLContext(false),
       autoZoomActive(false), speedMode(speed), verboseMode(false), exitAfterFirstDisplay(false),
-      autoScreenshotMode(false), currentEngineType(GridMandelbrotCalculator::EngineType::GPUF)
+      autoScreenshotMode(false), currentEngineType(GridMandelbrotCalculator::EngineType::BORDER)
 {
     // Parse engine type
     if (engineType == "border")
@@ -45,8 +45,8 @@ MandelbrotApp::MandelbrotApp(int w, int h, bool speed, const std::string &engine
     }
     else
     {
-        std::cerr << "Unknown engine type: " << engineType << ", defaulting to GPUF" << std::endl;
-        currentEngineType = GridMandelbrotCalculator::EngineType::GPUF;
+        std::cerr << "Unknown engine type: " << engineType << ", defaulting to BORDER" << std::endl;
+        currentEngineType = GridMandelbrotCalculator::EngineType::BORDER;
     }
 
     calcWidth = width / pixelSize;
@@ -131,8 +131,9 @@ MandelbrotApp::MandelbrotApp(int w, int h, bool speed, const std::string &engine
     // Initialize random seed first
     srand(static_cast<unsigned>(time(nullptr)));
 
-    // Initialize gradient with random parameters
-    gradient = Gradient::createRandom();
+    // Initialize gradient with default polynomial (non-swapped)
+    // Use fixed polynomial: r(t) = 9*(1-t)*t³*255, g(t) = 15*(1-t)²*t²*255, b(t) = 8.5*(1-t)³*t*255
+    gradient = std::make_unique<PolynomialGradient>(9.0, 15.0, 8.5);
 }
 
 MandelbrotApp::~MandelbrotApp()
@@ -596,9 +597,22 @@ void MandelbrotApp::run()
         return;
     }
 
-    std::cout << "Press ESC to quit, SPACE to recompute, R to reset zoom, S to toggle speed mode, A for auto-zoom" << std::endl;
-    std::cout << "Press E to switch engine (Boundary/Standard/SIMD), P to switch to a random palette, V to toggle verbose mode" << std::endl;
-    std::cout << "Click and drag to zoom into a region (SHIFT to zoom out, CTRL for center-based)" << std::endl;
+    std::cout << "Keyboard controls:" << std::endl;
+    std::cout << "  ESC      - Quit (or cancel drag)" << std::endl;
+    std::cout << "  SPACE    - Recompute" << std::endl;
+    std::cout << "  R        - Reset zoom to full set" << std::endl;
+    std::cout << "  F        - Toggle fast mode (parallel computation)" << std::endl;
+    std::cout << "  S        - Save screenshot" << std::endl;
+    std::cout << "  Shift+S  - Toggle auto-screenshot mode" << std::endl;
+    std::cout << "  E        - Cycle engine (Border→Standard→SIMD→GPU-Float→GPU-Double)" << std::endl;
+    std::cout << "  P        - Random palette" << std::endl;
+    std::cout << "  V        - Toggle verbose mode" << std::endl;
+    std::cout << "  A        - Toggle auto-zoom" << std::endl;
+    std::cout << "  X        - Toggle pixel size (1x or 10x)" << std::endl;
+    std::cout << "\nMouse controls:" << std::endl;
+    std::cout << "  Drag     - Zoom into region" << std::endl;
+    std::cout << "  Shift+Drag - Zoom out from region" << std::endl;
+    std::cout << "  Ctrl+Drag  - Center-based zoom" << std::endl;
 
     bool running = true;
     SDL_Event event;
@@ -647,13 +661,6 @@ void MandelbrotApp::run()
                     render();
                 }
                 else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_r)
-                {
-                    resetZoom();
-                    calculator->reset();
-                    compute();
-                    render();
-                }
-                else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_h)
                 {
                     resetZoom();
                     calculator->reset();
@@ -1069,4 +1076,16 @@ void MandelbrotApp::setVerboseMode(bool verbose)
     {
         calculator->setVerboseMode(verbose);
     }
+}
+
+void MandelbrotApp::setAutoZoom(bool enabled)
+{
+    autoZoomActive = enabled;
+    std::cout << "Auto-zoom: " << (autoZoomActive ? "ON" : "OFF") << std::endl;
+}
+
+void MandelbrotApp::setRandomPalette()
+{
+    gradient = Gradient::createRandom();
+    std::cout << "Using random palette" << std::endl;
 }
