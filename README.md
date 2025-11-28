@@ -1,139 +1,68 @@
+# Mandelbrot Set Explorer
 
-Note: this code was entierly vibe coded from the included PDF and the two following prompts:
+Interactive Mandelbrot set renderer with multiple computation engines and real-time visualization.
 
-1) 
-
-"Can you extract the code from the pdf mandelbrottrace.pdf?"
-
-[led to some issues tryong various approaches, but ultimately worked with a custom python script inline script)
-
-```
-~/Development/mandelborder/.venv/bin/python -c "from pypdf import PdfReader; reader = PdfReader('mandelbrotbtrace.pdf'); text = ''.join([page.extract_text() for page in reader.pages]); print(text)"
-```
-
-2)
-
-"taking inspiration of this code, write a C++ version that uses SDL2 to compute and display a mandelbrot set"
-
-
-(command to process a video captured -- nothing to do here)
-ffmpeg -i input.mp4 -vf scale=-2:720 -c:v libx264 -preset slow -b:v 2500k -pass 1 -an -f mp4 /dev/null
-ffmpeg -i input.mp4 -vf scale=-2:720 -c:v libx264 -preset slow -b:v 2500k -pass 2 -c:a aac -b:a 192k output_720p.mp4
-
-
-
-
-# Mandelbrot Set Renderer
-
-Modern C++ implementation of Mandelbrot set visualization using SDL2, inspired by Joel Yliluoma's boundary tracing algorithm from 2010.
-
-## Features
-
-- **Boundary Tracing Algorithm**: Efficient rendering that only calculates pixels near boundaries
-- **Interactive Zoom**: Click and drag to zoom into any region
-- **Smooth Color Palette**: Generated using cosine functions for smooth gradients
-- **Real-time Rendering**: Updates display during computation
-
-## Algorithm
-
-Instead of computing every pixel individually (which takes WIDTH × HEIGHT iterations), this implementation uses a boundary tracing approach:
-
-1. Start with the edges of the screen
-2. For each pixel, check if its neighbors have different iteration counts
-3. If they differ, add those neighbors to a queue for processing
-4. Continue until the queue is empty
-5. Fill any remaining interior pixels with neighbor colors
-
-This is much faster for regions with large uniform areas (like the interior and exterior of the set).
-
-## Requirements
-
-- C++11 or later
-- SDL2 library
-
-### Installing SDL2
-
-**macOS (using Homebrew):**
-```bash
-brew install sdl2
-```
-
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt-get install libsdl2-dev
-```
-
-**Linux (Fedora):**
-```bash
-sudo dnf install SDL2-devel
-```
-
-## Building
+## Build
 
 ```bash
 make
-```
-
-## Running
-
-```bash
 ./mandelbrot_sdl2
 ```
 
-Or combine both steps:
+Dependencies: SDL2, OpenGL 3.2+
+
+## Usage
+
 ```bash
-make run
+./mandelbrot_sdl2 [--engine ENGINE] [--speed] [--verbose] [--auto-zoom] [--pixel-size N]
 ```
+
+**Options:**
+- `--engine`: Choose engine: `border`, `standard`, `simd`, `gpuf`, `gpud` (default: border)
+- `--speed`: Enable parallel 4×4 grid mode
+- `--verbose`: Show computation stats
+- `--auto-zoom`: Automatic zoom exploration
+- `--pixel-size N`: Render at reduced resolution (1-20, default: 1)
 
 ## Controls
 
-- **Mouse**: Click and drag to select a region to zoom into
-- **SPACE**: Recompute the current view
-- **R**: Reset zoom to full Mandelbrot set view
-- **S**: Save screenshot as PNG with timestamp
-- **Shift+S**: Toggle auto-screenshot mode (saves every frame)
-- **F**: Toggle fast mode (parallel 4x4 grid vs progressive rendering)
-- **P**: Change color palette
-- **E**: Cycle through render engines (BORDER/STANDARD/SIMD)
-- **A**: Toggle auto-zoom mode
-- **V**: Toggle verbose mode
-- **X**: Toggle pixel size (1x vs 10x for faster rendering)
-- **ESC**: Quit
+**Keyboard:**
+- `SPACE` - Recompute
+- `R` - Reset to full set
+- `F` - Toggle fast mode (4×4 grid)
+- `E` - Cycle engines (Border→Standard→SIMD→GPU-Float→GPU-Double)
+- `P` - Random palette
+- `V` - Toggle verbose output
+- `A` - Toggle auto-zoom
+- `X` - Toggle 1×/10× pixel size
+- `S` - Save screenshot
+- `Shift+S` - Toggle auto-screenshot
+- `ESC` - Quit
 
-## Customization
+**Mouse:**
+- Drag - Zoom into region
+- `Shift`+Drag - Zoom out
+- `Ctrl`+Drag - Center-based zoom
 
-You can modify the view parameters in the code:
+## Engines
 
-```cpp
-// Default: full set view
-double cre = -0.5;
-double cim = 0.0;
-double diam = 3.0;
+**Border**: Boundary tracing algorithm - only computes pixels near edges, fills interiors  
+**Standard**: Naive per-pixel iteration  
+**SIMD**: Vectorized computation (4 pixels parallel)  
+**GPU-Float**: OpenGL shader (32-bit precision, ~10× faster)  
+**GPU-Double**: OpenGL shader (64-bit precision, slower but deeper zoom)
 
-// Or try this zoomed detail view:
-// double cre = -1.36022;
-// double cim = 0.0653316;
-// double diam = 0.035;
+Fast mode (`--speed` or `F` key): Splits computation across 4×4 grid using threads (not available for GPU engines).
+
+## Verbose Output
+
+With `-v` or `--verbose`, displays computation stats:
 ```
-
-Other parameters you can adjust:
-- `WIDTH` and `HEIGHT`: Window resolution (default: 800×600)
-- `MAX_ITER`: Maximum iterations (default: 768)
-- Color palette in `generatePalette()` method
-
-## Code Structure
-
-- `MandelbrotRenderer` class encapsulates all functionality
-- `iterate()`: Core Mandelbrot iteration function
-- `scan()`: Boundary tracing logic
-- `compute()`: Main computation loop using queue-based algorithm
-- `render()`: SDL2 rendering to screen
-- Interactive zoom and pan support
+border  800×600     615.7 ms   -0.5000000000000000   0.0000000000000000     3.00e+00
+ simd    4×4     800×600      44.8 ms   -0.5000000000000000   0.0000000000000000     3.00e+00
+```
+Format: `[engine] [grid] [resolution] [time] [center_real] [center_imag] [diameter]`
 
 ## Original Algorithm
 
-This implementation is based on the boundary tracing technique demonstrated by Joel Yliluoma in his 2010 DOS program. The original used VGA Mode 13h graphics; this version modernizes it with SDL2 for cross-platform compatibility.
-
-## License
-
-Inspired by Joel Yliluoma's original work. Feel free to use and modify.
+Boundary tracing technique by Joel Yliluoma (2010). Original DOS program used VGA Mode 13h; this modernizes it with SDL2/OpenGL.
