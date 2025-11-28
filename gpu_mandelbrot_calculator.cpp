@@ -206,41 +206,43 @@ void GpuMandelbrotCalculator::initShaders()
             // Convert double uniforms to computation precision
             // Note: texCoord.y=0 is bottom in OpenGL, but we want y=0 to be top (mini)
             // So we flip: use (1.0 - texCoord.y)
-            $PRECISION_TYPE cx = $PRECISION_TYPE(minR) + $PRECISION_TYPE(texCoord.x) * $PRECISION_TYPE(maxR - minR);
-            $PRECISION_TYPE cy = $PRECISION_TYPE(minI) + $PRECISION_TYPE(1.0 - texCoord.y) * $PRECISION_TYPE(maxI - minI);
+            $PRECISION_TYPE x = $PRECISION_TYPE(minR) + $PRECISION_TYPE(texCoord.x) * $PRECISION_TYPE(maxR - minR);
+            $PRECISION_TYPE y = $PRECISION_TYPE(minI) + $PRECISION_TYPE(1.0 - texCoord.y) * $PRECISION_TYPE(maxI - minI);
             
-            $PRECISION_TYPE zx = $PRECISION_TYPE(0.0);
-            $PRECISION_TYPE zy = $PRECISION_TYPE(0.0);
-            $PRECISION_TYPE zx2 = $PRECISION_TYPE(0.0);
-            $PRECISION_TYPE zy2 = $PRECISION_TYPE(0.0);
+            // Start with z = c (matching CPU implementation)
+            $PRECISION_TYPE r = x;
+            $PRECISION_TYPE i = y;
+            $PRECISION_TYPE r2;
+            $PRECISION_TYPE i2;
             
             int iter = 0;
             // We can use a dynamic loop in GLSL 4.0
-            for (int i = 0; i < maxIter; ++i) {
-                if (zx2 + zy2 > $PRECISION_TYPE(4.0)) {
-                    iter = i;
+            for (int k = 0; k < maxIter; ++k) {
+                r2 = r * r;
+                i2 = i * i;
+                
+                if (r2 + i2 >= $PRECISION_TYPE(4.0)) {
+                    iter = k;
                     break;
                 }
                 
-                zy = $PRECISION_TYPE(2.0) * zx * zy + cy;
-                zx = zx2 - zy2 + cx;
-                zx2 = zx * zx;
-                zy2 = zy * zy;
-                iter = i;
+                $PRECISION_TYPE ri = r * i;
+                i = ri + ri + y; // z = z^2 + c
+                r = r2 - i2 + x;
             }
             
-            // If we reached the end, it's inside the set
-            if (iter == maxIter - 1 && zx2 + zy2 <= $PRECISION_TYPE(4.0)) {
+            // If loop completed without breaking, we're in the set
+            if (iter == 0 && r2 + i2 < $PRECISION_TYPE(4.0)) {
                 iter = maxIter;
             }
             
             // Encode iter into RG channels
             // R = low byte, G = high byte
             
-            float r = mod(float(iter), 256.0) / 255.0;
-            float g = floor(float(iter) / 256.0) / 255.0;
+            float rOut = mod(float(iter), 256.0) / 255.0;
+            float gOut = floor(float(iter) / 256.0) / 255.0;
             
-            fragColor = vec4(r, g, 0.0, 1.0);
+            fragColor = vec4(rOut, gOut, 0.0, 1.0);
         }
     )";
 
