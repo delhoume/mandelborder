@@ -87,14 +87,16 @@ bool ZoomPointChooser::findInterestingPoint(const std::vector<int> &data, int ma
     // Define candidates as points with high iteration values
     int threshold = maxIterFound - 5;
 
-    // Second pass: collect candidates and score them
-    struct Candidate
+    // Second pass: use reservoir sampling to pick up to 100 candidate points
+    // This limits scoring to a fixed number regardless of how many pixels qualify
+    struct Point
     {
         int x, y;
-        int score;
     };
-    std::vector<Candidate> candidates;
-
+    std::vector<Point> sampledPoints;
+    sampledPoints.reserve(100);
+    
+    int count = 0;
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
@@ -105,16 +107,48 @@ bool ZoomPointChooser::findInterestingPoint(const std::vector<int> &data, int ma
             // Point is a candidate if it has high iteration but not max
             if (iter >= threshold && iter < maxIter)
             {
-                // Calculate diversity score for this potential zoom point
-                int score = calculateDiversityScore(data, maxIter, x, y,
-                                                    zoomRectWidth, zoomRectHeight);
-
-                // Only consider points with meaningful diversity
-                if (score > 0)
+                count++;
+                if (sampledPoints.size() < 100)
                 {
-                    candidates.push_back({x, y, score});
+                    // Fill reservoir
+                    sampledPoints.push_back({x, y});
+                }
+                else
+                {
+                    // Randomly replace with decreasing probability
+                    int j = rand() % count;
+                    if (j < 100)
+                    {
+                        sampledPoints[j] = {x, y};
+                    }
                 }
             }
+        }
+    }
+    
+    // If no candidates found, fall back to center
+    if (sampledPoints.empty())
+    {
+        outX = width / 2;
+        outY = height / 2;
+        return false;
+    }
+
+    // Score the sampled points
+    struct Candidate
+    {
+        int x, y;
+        int score;
+    };
+    std::vector<Candidate> candidates;
+    
+    for (const auto& point : sampledPoints)
+    {
+        int score = calculateDiversityScore(data, maxIter, point.x, point.y,
+                                            zoomRectWidth, zoomRectHeight);
+        if (score > 0)
+        {
+            candidates.push_back({point.x, point.y, score});
         }
     }
 
